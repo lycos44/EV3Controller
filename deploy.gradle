@@ -1,0 +1,82 @@
+
+ssh.settings {
+    knownHosts = allowAnyHosts
+}
+
+task ('testConnection') {
+    doLast {
+        ssh.run {
+            session(remotes.ev3dev) {
+                println "ls ./ev3/ "
+                execute "ls ./ev3/ "
+            }
+        }
+    }
+}
+
+task ('cleanRemote') {
+    doLast {
+        ssh.run {
+            session(remotes.ev3dev) {
+                println "remove "
+                execute "ls ./ev3/* "
+                execute "rm ./ev3/* "
+            }
+            session(remotes.raspberrypi) {
+                println "remove "
+                execute "ls ./ev3/* "
+                execute "rm ./ev3/* "
+            }
+        }
+    }
+}
+
+clean.doFirst {
+    subprojects.each {
+        it.afterEvaluate {
+            def cleanTask = it.tasks.findByName('clean')
+            if (cleanTask) {
+                dependsOn(cleanTask)
+            }
+        }
+    }
+}
+
+task ('deploy') {
+    doLast {
+        ssh.run {
+            session(remotes.raspberrypi) {
+                put from: "./raspiRMIClient/build/libs/raspiRMIClient-${version}.jar", into: "/home/pi/ev3"
+                put from: "./remoteEV3/build/libs/remoteEV3-${version}.jar", into: "/home/pi/ev3"
+                println "ls -l ./ev3/ "
+                execute "ls -l ./ev3/ "
+            }
+            session(remotes.ev3dev) {
+                put from: "./ev3devRMIServer/build/libs/ev3devRMIServer-${version}.jar", into: "/home/robot/ev3"
+                put from: "./remoteEV3/build/libs/remoteEV3-${version}.jar", into: "/home/robot/ev3"
+                println "ls -l ./ev3/ "
+                execute "ls -l ./ev3/ "
+            }
+        }
+    }
+}
+
+deploy.dependsOn clean /*, fatJar*/
+
+task ('remoteRun') {
+    doLast {
+        ssh.run {
+            session(remotes.ev3dev) {
+                execute "java -server -jar ./ev3/ev3devRMIServer-${version}.jar& "
+                println "java -server -jar ./ev3/ev3devRMIServer-${version}.jar& "
+            }
+        }
+    }
+}
+
+task ('deployAndRun') {
+
+}
+deployAndRun.dependsOn deploy, remoteRun
+
+apply from: 'config.gradle'

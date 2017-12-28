@@ -1,4 +1,4 @@
-package de.munro.ev2dev.rmi;
+package de.munro.ev3.rmi;
 
 public class EV3devRMIServer {
 }

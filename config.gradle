@@ -1,0 +1,14 @@
+
+remotes {
+    raspberrypi {
+        host = 'raspberrypi'
+        user = 'pi'
+        password = 'lycos44'
+    }
+    ev3dev {
+        host = '10.42.0.3'
+        user = 'robot'
+        password = 'maker'
+        gateway = remotes.raspberrypi
+    }
+}
