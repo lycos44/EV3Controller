@@ -1,44 +1,37 @@
 package de.munro.ev3.rmi;
 
-import de.munro.ev3.rmi.Hello;
-//import org.slf4j.Logger;
-//import org.slf4j.LoggerFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.rmi.Naming;
 
 public class HelloClient
 {
-    //private static Logger logger = LoggerFactory.getLogger(HelloClient.class);
-    private static final String LOCAL_HOST = "localhost";
-    private String host;
-/*
-    public HelloClient(String[] args) {
-        if (args.length == 1) {
-            setHost(args[0]);
-        } else {
-            setHost(LOCAL_HOST);
-        }
-        //logger.info("Host: "+getHost());
-    }
-*/
-    public static void main(String arg[])
+    private static final Logger LOG = LoggerFactory.getLogger(HelloClient.class);
+    private String host = "localhost";
+
+    public static void main(String args[])
     {
-        //logger.info("*** started client ***");
+        LOG.info("Started {}", (Object[])args);
         // I download server's stubs ==> must set a SecurityManager
 //        System.setSecurityManager(new SecurityManager());
+        HelloClient helloClient = new HelloClient();
+        if (args.length == 1) {
+            helloClient.setHost(args[0]);
+        }
 
         try
         {
-            HelloClient helloClient = new HelloClient();
-            //Hello look_up = (Hello) Naming.lookup("//"+helloClient.getHost()+"/HelloServer");
-            Hello look_up = (Hello) Naming.lookup("//ev3dev/HelloServer");
-            System.out.println(look_up.sayHello());
+            Hello look_up = (Hello) Naming.lookup(String.format("//%s/%s", helloClient.getHost(), Hello.SERVICE_NAME));
+            String message = look_up.sayHello();
+            LOG.info("look_up.sayHello(): {}", message);
+            look_up.shutdown();
+            LOG.info("shutdown()");
         }
         catch (Exception e)
         {
-            System.out.println("HelloClient exception: " + e.getMessage());
-            e.printStackTrace();
+            LOG.error("Exception: ", e);
         }
-        //logger.info("*** finished client ***");
+        LOG.info("Finished");
     }
 
     public String getHost() {

@@ -30,6 +30,8 @@ subprojects {
     dependencies {
         // The production code uses the SLF4J logging API at compile time
         compile 'org.slf4j:slf4j-api:1.7.25'
+        compile 'org.slf4j:slf4j-simple:1.7.25'
+        compile 'org.apache.logging.log4j:log4j-slf4j-impl:2.10.0'
 
         // Use JUnit test framework
         testImplementation 'junit:junit:4.12'
@@ -37,16 +39,6 @@ subprojects {
         compile("com.github.ev3dev-lang-java:ev3dev-lang-java:0.7.0")
         compile("com.github.ev3dev-lang-java:lejos-navigation:0.2.0")
     }
-}
-
-//Fat Jar
-task fatJar(type: Jar) {
-    baseName = "${rootProject.name}" + "-all"
-    manifest {
-        from file("${projectDir}/src/main/resources/META-INF/MANIFEST.MF")
-    }
-    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
-    with jar
 }
 
 //Deploy on Brick

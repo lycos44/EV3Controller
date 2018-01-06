@@ -3,6 +3,8 @@ ssh.settings {
     knownHosts = allowAnyHosts
 }
 
+build.dependsOn(clean)
+
 task ('testConnection') {
     doLast {
         ssh.run {
@@ -18,14 +20,14 @@ task ('cleanRemote') {
     doLast {
         ssh.run {
             session(remotes.ev3dev) {
-                println "remove "
+                println "remove from ev3dev "
                 execute "ls ./ev3/* "
-                execute "rm ./ev3/* "
+                execute "rm -Rf ./ev3 "
             }
             session(remotes.raspberrypi) {
-                println "remove "
+                println "remove from raspberrypi "
                 execute "ls ./ev3/* "
-                execute "rm ./ev3/* "
+                execute "rm -Rf ./ev3 "
             }
         }
     }
@@ -46,14 +48,16 @@ task ('deploy') {
     doLast {
         ssh.run {
             session(remotes.raspberrypi) {
-                put from: "./raspiRMIClient/build/libs/raspiRMIClient-${version}.jar", into: "/home/pi/ev3"
-                put from: "./remoteEV3/build/libs/remoteEV3-${version}.jar", into: "/home/pi/ev3"
+                execute "mkdir -p ./ev3/ "
+                put from: "./raspiRMIClient/build/distributions/raspiRMIClient-${version}.tar", into: "/home/pi/ev3"
+                execute "tar -xf ./ev3/raspiRMIClient-${version}.tar -C ./ev3/"
                 println "ls -l ./ev3/ "
                 execute "ls -l ./ev3/ "
             }
             session(remotes.ev3dev) {
-                put from: "./ev3devRMIServer/build/libs/ev3devRMIServer-${version}.jar", into: "/home/robot/ev3"
-                put from: "./remoteEV3/build/libs/remoteEV3-${version}.jar", into: "/home/robot/ev3"
+                execute "mkdir -p ./ev3/ "
+                put from: "./ev3devRMIServer/build/distributions/ev3devRMIServer-${version}.tar", into: "/home/robot/ev3"
+                execute "tar -xf ./ev3/ev3devRMIServer-${version}.tar -C ./ev3/ --touch "
                 println "ls -l ./ev3/ "
                 execute "ls -l ./ev3/ "
             }
@@ -61,14 +65,14 @@ task ('deploy') {
     }
 }
 
-deploy.dependsOn clean /*, fatJar*/
+deploy.dependsOn build
 
 task ('remoteRun') {
     doLast {
         ssh.run {
             session(remotes.ev3dev) {
-                execute "java -server -jar ./ev3/ev3devRMIServer-${version}.jar& "
-                println "java -server -jar ./ev3/ev3devRMIServer-${version}.jar& "
+                execute "./ev3/ev3devRMIServer-${version}/bin/ev3devRMIServer& "
+                println "./ev3/ev3devRMIServer-${version}/bin/ev3devRMIServer& "
             }
         }
     }
