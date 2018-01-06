@@ -55,3 +55,7 @@ buildscript {
 apply plugin: 'org.hidetake.ssh'
 
 apply from: 'deploy.gradle'
+
+plugins {
+    id 'net.researchgate.release' version '2.6.0'
+}
