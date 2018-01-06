@@ -7,8 +7,6 @@
  */
 apply plugin: 'application'
 mainClassName = 'de.munro.ev3.rmi.HelloImpl'
-group = 'de.munro'
-version = '00.00.01-SNAPSHOT'
 
 project(':ev3devRMIServer') {
     dependencies {
@@ -17,7 +15,7 @@ project(':ev3devRMIServer') {
 }
 
 dependencies {
-    compile 'de.munro:remoteEV3:00.00.01-SNAPSHOT'
+    compile 'de.munro:remoteEV3:${version}'
 }
 
 int i = 0

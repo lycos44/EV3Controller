@@ -15,7 +15,7 @@ project(':raspiRMIClient') {
 }
 
 dependencies {
-    compile 'de.munro:remoteEV3:00.00.01-SNAPSHOT'
+    compile 'de.munro:remoteEV3:${version}'
 }
 
 int i = 0

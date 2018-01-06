@@ -10,7 +10,7 @@ allprojects {
     apply plugin: 'idea'
     apply plugin: 'java'
     group = 'de.munro'
-    version = '00.00.01-SNAPSHOT'
+    version = '01.00.00'
 }
 
 subprojects {
@@ -52,10 +52,7 @@ buildscript {
         classpath "org.hidetake:gradle-ssh-plugin:2.0.0"
     }
 }
+
 apply plugin: 'org.hidetake.ssh'
 
 apply from: 'deploy.gradle'
-
-plugins {
-    id 'net.researchgate.release' version '2.6.0'
-}
