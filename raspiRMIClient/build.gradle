@@ -6,7 +6,7 @@
  * user guide available at https://docs.gradle.org/4.3.1/userguide/java_library_plugin.html
  */
 apply plugin: 'application'
-mainClassName = 'de.munro.ev3.rmi.HelloClient'
+mainClassName = 'de.munro.ev3.rmi.RaspiRMIClient'
 
 project(':raspiRMIClient') {
     dependencies {

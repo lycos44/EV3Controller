@@ -5,40 +5,58 @@
  * For more details take a look at the Java Libraries chapter in the Gradle
  * user guide available at https://docs.gradle.org/4.3.1/userguide/java_library_plugin.html
  */
-apply plugin: 'application'
-mainClassName = 'de.munro.ev3.rmi.HelloImpl'
+version = '01.00.01-SNAPSHOT'
 
-project(':ev3devRMIServer') {
-    dependencies {
-        compile project(':remoteEV3')
-    }
+apply plugin: 'java'
+apply plugin: 'eclipse'
+apply plugin: 'idea'
+
+repositories {
+    mavenCentral()
+    maven { url "https://jitpack.io" }
 }
 
 dependencies {
-    compile 'de.munro:remoteEV3:${version}'
+    compile("ch.qos.logback:logback-classic:1.2.3")
+    compile("com.github.ev3dev-lang-java:ev3dev-lang-java:0.7.0")
+    compile("com.github.ev3dev-lang-java:lejos-navigation:0.2.0")
 }
 
-int i = 0
-project.ext.classPathArtifacts = ["${project.name}-${version}.jar", "remoteEV3-${version}.jar"]
-String classpathVar = project.ext.classPathArtifacts.collect { " " + (i++==0?String.format("%0\$-55s", it):String.format("%0\$-67s", it))   }.join(" ");
+//Compile
+compileJava {
+    sourceCompatibility = 1.8
+    targetCompatibility = 1.8
+}
 
+//Jar
 jar {
+    baseName = "${rootProject.name}"
     manifest {
-        attributes (
-                'Manifest-Version': '1.0',
-                'Main-Class': mainClassName,
-                'Class-Path': "remoteEV3-${version}.jar"
-        )
+        from file("${projectDir}/src/main/resources/META-INF/MANIFEST.MF")
     }
 }
 
-apply plugin: 'maven'
-install {
-    repositories.mavenInstaller {
-        pom.artifactId = project.name
-        pom.packaging = 'jar'
+//Fat Jar
+task fatJar(type: Jar) {
+    baseName = "${rootProject.name}" + "-all"
+    manifest {
+        from file("${projectDir}/src/main/resources/META-INF/MANIFEST.MF")
     }
+    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+    with jar
 }
 
-build.dependsOn install
+//Deploy on Brick
+buildscript {
+    repositories {
+        maven {
+            url "https://plugins.gradle.org/m2/"
+        }
+    }
+    dependencies {
+        classpath "org.hidetake:gradle-ssh-plugin:2.0.0"
+    }
+}
+apply plugin: 'org.hidetake.ssh'
 
+apply from: 'deploy.gradle'

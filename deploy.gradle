@@ -3,8 +3,6 @@ ssh.settings {
     knownHosts = allowAnyHosts
 }
 
-build.dependsOn(clean)
-
 task ('testConnection') {
     doLast {
         ssh.run {
@@ -44,6 +42,8 @@ clean.doFirst {
     }
 }
 
+build.dependsOn clean
+
 task ('deploy') {
     doLast {
         ssh.run {
@@ -81,6 +81,6 @@ task ('remoteRun') {
 task ('deployAndRun') {
 
 }
-deployAndRun.dependsOn deploy, remoteRun
+deployAndRun.dependsOn cleanRemote, deploy, remoteRun
 
 apply from: 'config.gradle'

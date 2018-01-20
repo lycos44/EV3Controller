@@ -1,0 +1,74 @@
+ssh.settings {
+    knownHosts = allowAnyHosts
+}
+
+task ('testConnection') {
+    doLast {
+        ssh.run {
+            session(remotes.ev3dev) {
+                println "ls "
+                execute "ls "
+            }
+        }
+    }
+}
+
+task ('deploy') {
+    doLast {
+        ssh.run {
+            session(remotes.ev3dev) {
+                put from: "build/libs/" + "ev3devRMIServer" + "-all-" + version + ".jar", into: "/home/robot/"
+            }
+        }
+    }
+}
+deploy.dependsOn clean, fatJar
+
+task ('remoteRun') {
+    doLast {
+        ssh.run {
+            session(remotes.ev3dev) {
+                println "java -server -jar /home/robot/" + "ev3devRMIServer" + "-all-" + version + ".jar "
+                execute "java -server -jar /home/robot/" + "ev3devRMIServer" + "-all-" + version + ".jar "
+            }
+        }
+    }
+}
+
+task ('remoteSudoRun') {
+    doLast {
+        ssh.run {
+            session(remotes.ev3dev) {
+                println "echo -e \"maker\" | sudo -S java -server -jar /home/robot/" + "EV3Controller" + "-" + version + "-all" + ".jar"
+                execute "echo -e \"maker\" | sudo -S java -server -jar /home/robot/" + "EV3Controller" + "-" + version + "-all" + ".jar"
+            }
+        }
+    }
+}
+
+task ('remoteProfilingRun') {
+    doLast {
+        ssh.run {
+            session(remotes.ev3dev) {
+                println "java -Dcom.sun.management.jmxremote=true -Dcom.sun.management.jmxremote.port=7091 -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -server -jar /home/robot/" + "EV3Controller" + "-all-" + version + ".jar "
+                execute "java -Dcom.sun.management.jmxremote=true -Dcom.sun.management.jmxremote.port=7091 -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -server -jar /home/robot/" + "EV3Controller" + "-all-" + version + ".jar "
+            }
+        }
+    }
+}
+task ('deployAndRun') {
+
+}
+deployAndRun.dependsOn deploy, remoteRun
+
+task ('deployAndRunEV3') {
+
+}
+deployAndRunEV3.dependsOn deploy, remoteRun
+
+task ('deployAndProfilingRun') {
+
+}
+deployAndProfilingRun.dependsOn deploy, remoteProfilingRun
+
+apply from: 'config.gradle'
