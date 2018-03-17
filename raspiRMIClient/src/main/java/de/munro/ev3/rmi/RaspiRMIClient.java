@@ -11,8 +11,7 @@ public class RaspiRMIClient {
 
     private String host = LOCAL_HOST;
 
-    public static void main(String args[])
-    {
+    public static void main(String args[]) {
         LOG.info("Started {}", (Object[])args);
 
         RaspiRMIClient RaspiRMIClient = new RaspiRMIClient();
@@ -28,17 +27,17 @@ public class RaspiRMIClient {
 
             LOG.info("remoteEV3.forward()");
             remoteEV3.forward();
-//            LOG.info("remoteEV3.forward()");
-//            remoteEV3.forward();
-//            Thread.sleep(2000);
-//            LOG.info("remoteEV3.stop()");
-//            remoteEV3.stop();
-//            Thread.sleep(2000);
-//            LOG.info("remoteEV3.backward()");
-//            remoteEV3.backward();
-//            Thread.sleep(2000);
-//            LOG.info("remoteEV3.stop()");
-//            remoteEV3.stop();
+            LOG.info("remoteEV3.forward()");
+            remoteEV3.forward();
+            Thread.sleep(2000);
+            LOG.info("remoteEV3.stop()");
+            remoteEV3.stop();
+            Thread.sleep(2000);
+            LOG.info("remoteEV3.backward()");
+            remoteEV3.backward();
+            Thread.sleep(2000);
+            LOG.info("remoteEV3.stop()");
+            remoteEV3.stop();
         }
         catch (Exception e)
         {

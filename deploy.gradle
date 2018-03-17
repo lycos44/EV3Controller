@@ -41,19 +41,11 @@ clean.doFirst {
         }
     }
 }
-
 build.dependsOn clean
 
-task ('deploy') {
+task ('deployEV3') {
     doLast {
         ssh.run {
-            session(remotes.raspberrypi) {
-                execute "mkdir -p ./ev3/ "
-                put from: "./raspiRMIClient/build/distributions/raspiRMIClient-${version}.tar", into: "/home/pi/ev3"
-                execute "tar -xf ./ev3/raspiRMIClient-${version}.tar -C ./ev3/"
-                println "ls -l ./ev3/ "
-                execute "ls -l ./ev3/ "
-            }
             session(remotes.ev3dev) {
                 execute "mkdir -p ./ev3/ "
                 put from: "./ev3devRMIServer/build/distributions/ev3devRMIServer-${version}.tar", into: "/home/robot/ev3"
@@ -64,8 +56,22 @@ task ('deploy') {
         }
     }
 }
+deployEV3.dependsOn clean, build, jar
 
-deploy.dependsOn build
+task ('deployRaspi') {
+    doLast {
+        ssh.run {
+            session(remotes.raspberrypi) {
+                execute "mkdir -p ./ev3/ "
+                put from: "./raspiRMIClient/build/distributions/raspiRMIClient-${version}.tar", into: "/home/pi/ev3"
+                execute "tar -xf ./ev3/raspiRMIClient-${version}.tar -C ./ev3/"
+                println "ls -l ./ev3/ "
+                execute "ls -l ./ev3/ "
+            }
+        }
+    }
+}
+deployRaspi.dependsOn build, jar
 
 task ('remoteRun') {
     doLast {
@@ -81,6 +87,6 @@ task ('remoteRun') {
 task ('deployAndRun') {
 
 }
-deployAndRun.dependsOn cleanRemote, deploy, remoteRun
+deployAndRun.dependsOn cleanRemote, deployEV3, remoteRun
 
 apply from: 'config.gradle'

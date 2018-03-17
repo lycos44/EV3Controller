@@ -5,18 +5,17 @@
  * For more details take a look at the Java Libraries chapter in the Gradle
  * user guide available at https://docs.gradle.org/4.3.1/userguide/java_library_plugin.html
  */
-version = '01.00.01-SNAPSHOT'
-
-apply plugin: 'java'
-apply plugin: 'eclipse'
-apply plugin: 'idea'
+apply plugin: 'application'
+mainClassName = 'de.munro.ev3.rmi.EV3devRMIServer'
 
 repositories {
+    mavenLocal()
     mavenCentral()
     maven { url "https://jitpack.io" }
 }
 
 dependencies {
+    compile project(':remoteEV3')
     compile("ch.qos.logback:logback-classic:1.2.3")
     compile("com.github.ev3dev-lang-java:ev3dev-lang-java:0.7.0")
     compile("com.github.ev3dev-lang-java:lejos-navigation:0.2.0")
@@ -58,5 +57,3 @@ buildscript {
     }
 }
 apply plugin: 'org.hidetake.ssh'
-
-apply from: 'deploy.gradle'
