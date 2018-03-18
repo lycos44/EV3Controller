@@ -29,9 +29,12 @@ compileJava {
 
 //Jar
 jar {
-    baseName = "${rootProject.name}"
     manifest {
-        from file("${projectDir}/src/main/resources/META-INF/MANIFEST.MF")
+        attributes (
+                'Manifest-Version': '1.0',
+                'Main-Class': mainClassName,
+                'Implementation-Version': version
+        )
     }
 }
 

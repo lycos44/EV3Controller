@@ -8,6 +8,8 @@ public interface RemoteEV3 extends Remote
 {
     String SERVICE_NAME = "RemoteEV3";
 
+    void initialize() throws RemoteException;
+    boolean isInitialized() throws RemoteException;
     void beep() throws RemoteException;
     void forward() throws RemoteException;
     void backward() throws RemoteException;

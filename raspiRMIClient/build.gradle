@@ -27,7 +27,7 @@ jar {
         attributes (
                 'Manifest-Version': '1.0',
                 'Main-Class': mainClassName,
-                'Class-Path': "remoteEV3-${version}.jar"
+                'Implementation-Version': version
         )
     }
 }
