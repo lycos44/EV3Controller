@@ -5,7 +5,7 @@ import ev3dev.actuators.lego.motors.EV3LargeRegulatedMotor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class DriveMotor extends Motor{
+public class DriveMotor extends Motor {
     private static final Logger LOG = LoggerFactory.getLogger(DriveMotor.class);
 
     private static DriveMotor instance;
@@ -19,9 +19,9 @@ public class DriveMotor extends Motor{
     }
 
     private DriveMotor() {
-        this.motor = createMotor(EV3devConstants.DRIVE_MOTOR_PORT);
+        this.motor = createMotor(EV3devConstants.DRIVE_MOTOR_PORT, Polarity.NORMAL);
         if (null == this.motor) {
-            this.motor = createMotor(EV3devConstants.DRIVE_MOTOR_PORT);
+            this.motor = createMotor(EV3devConstants.DRIVE_MOTOR_PORT, Polarity.NORMAL);
         }
     }
 
@@ -33,5 +33,10 @@ public class DriveMotor extends Motor{
     @Override
     public EV3LargeRegulatedMotor getMotor() {
         return motor;
+    }
+
+    @Override
+    public void init() {
+
     }
 }

@@ -5,11 +5,14 @@ import ev3dev.actuators.lego.motors.EV3LargeRegulatedMotor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class ClimbMotor extends Motor{
+public class ClimbMotor extends Motor {
     private static final Logger LOG = LoggerFactory.getLogger(ClimbMotor.class);
 
     private static ClimbMotor instance;
     private EV3LargeRegulatedMotor motor;
+
+    private final int homePosition = 0;
+    private int climbPosition;
 
     public static ClimbMotor getInstance() {
         if (null == instance) {
@@ -19,9 +22,9 @@ public class ClimbMotor extends Motor{
     }
 
     private ClimbMotor() {
-        this.motor = createMotor(EV3devConstants.CLIMB_MOTOR_PORT);
+        this.motor = createMotor(EV3devConstants.CLIMB_MOTOR_PORT, Polarity.INVERSED);
         if (null == this.motor) {
-            this.motor = createMotor(EV3devConstants.CLIMB_MOTOR_PORT);
+            this.motor = createMotor(EV3devConstants.CLIMB_MOTOR_PORT, Polarity.INVERSED);
         }
     }
 
@@ -33,5 +36,18 @@ public class ClimbMotor extends Motor{
     @Override
     public EV3LargeRegulatedMotor getMotor() {
         return motor;
+    }
+
+    @Override
+    public void init() {
+        LOG.debug("init()");
+        backwardTillStalled();
+        getMotor().resetTachoCount();
+        LOG.debug("homePosition: {}", homePosition);
+        forwardTillStalled();
+        climbPosition = getMotor().getTachoCount();
+        LOG.debug("climbPosition: {}", climbPosition);
+        getMotor().rotateTo(homePosition);
+        LOG.debug("set home: {}", getMotor().getTachoCount());
     }
 }

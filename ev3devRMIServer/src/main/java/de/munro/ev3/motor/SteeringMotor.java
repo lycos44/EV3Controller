@@ -5,7 +5,7 @@ import ev3dev.actuators.lego.motors.EV3LargeRegulatedMotor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class SteeringMotor extends Motor{
+public class SteeringMotor extends Motor {
     private static final Logger LOG = LoggerFactory.getLogger(SteeringMotor.class);
 
     private static SteeringMotor instance;
@@ -19,9 +19,9 @@ public class SteeringMotor extends Motor{
     }
 
     private SteeringMotor() {
-        this.motor = createMotor(EV3devConstants.STEERING_MOTOR_PORT);
+        this.motor = createMotor(EV3devConstants.STEERING_MOTOR_PORT, Polarity.NORMAL);
         if (null == this.motor) {
-            this.motor = createMotor(EV3devConstants.STEERING_MOTOR_PORT);
+            this.motor = createMotor(EV3devConstants.STEERING_MOTOR_PORT, Polarity.NORMAL);
         }
     }
 
@@ -33,5 +33,10 @@ public class SteeringMotor extends Motor{
     @Override
     public EV3LargeRegulatedMotor getMotor() {
         return motor;
+    }
+
+    @Override
+    public void init() {
+
     }
 }

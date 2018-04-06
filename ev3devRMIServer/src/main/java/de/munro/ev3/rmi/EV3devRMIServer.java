@@ -81,10 +81,10 @@ public class EV3devRMIServer extends UnicastRemoteObject implements RemoteEV3 {
         ColorSensor.getInstance();
         DistanceSensor.getInstance();
 
-        DriveMotor.getInstance();
-        ClimbMotor.getInstance();
-        SteeringMotor.getInstance();
-        CameraMotor.getInstance();
+        DriveMotor.getInstance().init();
+        ClimbMotor.getInstance();//();
+        SteeringMotor.getInstance().init();
+        CameraMotor.getInstance().init();
     }
 
     @Override
