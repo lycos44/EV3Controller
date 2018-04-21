@@ -56,7 +56,7 @@ task ('deployEV3') {
         }
     }
 }
-deployEV3.dependsOn clean, build, jar
+deployEV3.dependsOn clean, build, jar, distTar
 
 task ('deployRaspi') {
     doLast {

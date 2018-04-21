@@ -5,10 +5,10 @@ import org.junit.Test;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 
-public class TouchSensorTest {
+public class BackwardSensorTest {
 
     @Test
     public void isInitialized() {
-        assertThat(TouchSensor.isInitialized(), is(false));
+        assertThat(BackwardSensor.isInitialized(), is(false));
     }
 }

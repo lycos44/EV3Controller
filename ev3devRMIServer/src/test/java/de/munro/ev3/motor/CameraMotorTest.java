@@ -3,6 +3,7 @@ package de.munro.ev3.motor;
 import ev3dev.actuators.lego.motors.EV3LargeRegulatedMotor;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.api.mockito.PowerMockito;
@@ -23,6 +24,7 @@ public class CameraMotorTest {
     public void setup() {
     }
 
+    @Ignore
     @Test
     public void init() throws Exception {
         PowerMockito.mockStatic(CameraMotor.class);

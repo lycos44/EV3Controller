@@ -4,9 +4,10 @@ import de.munro.ev3.motor.CameraMotor;
 import de.munro.ev3.motor.ClimbMotor;
 import de.munro.ev3.motor.DriveMotor;
 import de.munro.ev3.motor.SteeringMotor;
+import de.munro.ev3.sensor.CameraSensor;
 import de.munro.ev3.sensor.ColorSensor;
 import de.munro.ev3.sensor.DistanceSensor;
-import de.munro.ev3.sensor.TouchSensor;
+import de.munro.ev3.sensor.BackwardSensor;
 import ev3dev.actuators.Sound;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -57,7 +58,7 @@ public class EV3devRMIServer extends UnicastRemoteObject implements RemoteEV3 {
 
         //To Stop the motor in case of pkill java for example
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            LOG.info("Emergency stop");
+            LOG.info("Emergency stop!");
             DriveMotor.getInstance().stop();
             ClimbMotor.getInstance().stop();
             SteeringMotor.getInstance().stop();
@@ -77,12 +78,13 @@ public class EV3devRMIServer extends UnicastRemoteObject implements RemoteEV3 {
     }
 
     private void initialize() {
-        TouchSensor.getInstance();
+        BackwardSensor.getInstance();
+        CameraSensor.getInstance();
         ColorSensor.getInstance();
         DistanceSensor.getInstance();
 
         DriveMotor.getInstance().init();
-        ClimbMotor.getInstance();//();
+        ClimbMotor.getInstance().init();
         SteeringMotor.getInstance().init();
         CameraMotor.getInstance().init();
     }
@@ -94,11 +96,15 @@ public class EV3devRMIServer extends UnicastRemoteObject implements RemoteEV3 {
             LOG.error("distanceSensor not initialized");
             return false;
         }
+        if (!CameraSensor.isInitialized()) {
+            LOG.error("cameraSensor not initialized");
+            return false;
+        }
         if (!ColorSensor.isInitialized()) {
             LOG.error("colorSensor not initialized");
             return false;
         }
-        if (!TouchSensor.isInitialized()) {
+        if (!BackwardSensor.isInitialized()) {
             LOG.error("touchSensor not initialized");
             return false;
         }
@@ -106,7 +112,7 @@ public class EV3devRMIServer extends UnicastRemoteObject implements RemoteEV3 {
             LOG.error("driveMotor not initialized");
             return false;
         }
-        if (!CameraMotor.isInitialized()) {
+        if (!ClimbMotor.isInitialized()) {
             LOG.error("climbMotor not initialized");
             return false;
         }
@@ -154,7 +160,7 @@ public class EV3devRMIServer extends UnicastRemoteObject implements RemoteEV3 {
     public void climb() throws RemoteException {
         LOG.debug("climb()");
         // drive backward until the touch sensor is pressed
-        // TouchSensor.getInstance().isPressed();
+        // BackwardSensor.getInstance().isPressed();
         // lower down the climb shift and go backward
         // if the climb shift has reached its final position, go further backward,
         // then stop and reposition the climb shift

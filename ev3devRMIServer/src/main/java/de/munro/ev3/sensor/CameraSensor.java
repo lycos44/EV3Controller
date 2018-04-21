@@ -5,19 +5,20 @@ import lejos.hardware.port.Port;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static de.munro.ev3.rmi.EV3devConstants.TOUCH_SENSOR_PORT;
+import static de.munro.ev3.rmi.EV3devConstants.CAMERA_SENSOR_PORT;
 
-public class TouchSensor extends Sensor {
-    private static final Logger LOG = LoggerFactory.getLogger(TouchSensor.class);
+public class CameraSensor extends Sensor {
+    private static final Logger LOG = LoggerFactory.getLogger(CameraSensor.class);
 
-    private static TouchSensor instance;
+    private static CameraSensor instance;
     private EV3TouchSensor touchSensor;
+    private final Port port = CAMERA_SENSOR_PORT;
 
-    protected EV3TouchSensor createSensor(Port port) {
+    protected EV3TouchSensor createSensor() {
         LOG.debug("createSensor({})", port);
         EV3TouchSensor sensor = null;
         try {
-            sensor = new EV3TouchSensor(TOUCH_SENSOR_PORT);
+            sensor = new EV3TouchSensor(port);
             LOG.debug("sensor {}", sensor);
         } catch (Exception ex) {
             LOG.error(ex.getMessage(), ex);
@@ -25,16 +26,16 @@ public class TouchSensor extends Sensor {
         return sensor;
     }
 
-    private TouchSensor() {
-        touchSensor = createSensor(TOUCH_SENSOR_PORT);
+    private CameraSensor() {
+        touchSensor = createSensor();
         if (null == this.touchSensor) {
-            touchSensor = createSensor(TOUCH_SENSOR_PORT);
+            touchSensor = createSensor();
         }
     }
 
-    public static TouchSensor getInstance() {
+    public static CameraSensor getInstance() {
         if (null == instance) {
-            instance = new TouchSensor();
+            instance = new CameraSensor();
         }
         return instance;
     }

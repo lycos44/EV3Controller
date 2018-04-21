@@ -8,6 +8,9 @@ import org.slf4j.LoggerFactory;
 public class ClimbMotor extends Motor {
     private static final Logger LOG = LoggerFactory.getLogger(ClimbMotor.class);
 
+    private static final int MOTOR_SPEED = 100;
+    private static final Polarity MOTOR_POLARITY = Polarity.NORMAL;
+
     private static ClimbMotor instance;
     private EV3LargeRegulatedMotor motor;
 
@@ -22,9 +25,9 @@ public class ClimbMotor extends Motor {
     }
 
     private ClimbMotor() {
-        this.motor = createMotor(EV3devConstants.CLIMB_MOTOR_PORT, Polarity.INVERSED);
+        this.motor = createMotor(EV3devConstants.CLIMB_MOTOR_PORT, MOTOR_POLARITY);
         if (null == this.motor) {
-            this.motor = createMotor(EV3devConstants.CLIMB_MOTOR_PORT, Polarity.INVERSED);
+            this.motor = createMotor(EV3devConstants.CLIMB_MOTOR_PORT, MOTOR_POLARITY);
         }
     }
 
@@ -41,6 +44,7 @@ public class ClimbMotor extends Motor {
     @Override
     public void init() {
         LOG.debug("init()");
+        getMotor().setSpeed(MOTOR_SPEED);
         backwardTillStalled();
         getMotor().resetTachoCount();
         LOG.debug("homePosition: {}", homePosition);

@@ -2,6 +2,7 @@ package de.munro.ev3.motor;
 
 import de.munro.ev3.rmi.EV3devConstants;
 import ev3dev.actuators.lego.motors.EV3LargeRegulatedMotor;
+import lejos.utility.Delay;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -10,6 +11,8 @@ public class SteeringMotor extends Motor {
 
     private static SteeringMotor instance;
     private EV3LargeRegulatedMotor motor;
+    private int leftmostPosition = 0;
+    private int rightmostPosition = 0;
 
     public static SteeringMotor getInstance() {
         if (null == instance) {
@@ -37,6 +40,17 @@ public class SteeringMotor extends Motor {
 
     @Override
     public void init() {
-
+        backwardTillStalled();
+        getMotor().resetTachoCount();
+        int left = getMotor().getTachoCount();
+        LOG.debug("left: {}", left);
+        forwardTillStalled();
+        int right = getMotor().getTachoCount();
+        LOG.debug("right: {}", right);
+        int home = (left+right)/2;
+        leftmostPosition = home;
+        rightmostPosition = -home;
+        getMotor().rotateTo(home);
+        Delay.msDelay(1000);
     }
 }
