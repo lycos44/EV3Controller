@@ -1,7 +1,9 @@
 package de.munro.ev3.sensor;
 
+import de.munro.ev3.rmi.EV3devConstants;
 import ev3dev.sensors.ev3.EV3ColorSensor;
 import lejos.hardware.port.Port;
+import lejos.utility.Delay;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -10,8 +12,15 @@ import static de.munro.ev3.rmi.EV3devConstants.COLOR_SENSOR_PORT;
 public class ColorSensor extends Sensor {
     private static final Logger LOG = LoggerFactory.getLogger(ColorSensor.class);
 
-    private static ColorSensor instance;
     private EV3ColorSensor colorSensor;
+    private final Port port = EV3devConstants.COLOR_SENSOR_PORT;
+
+    public ColorSensor() {
+        colorSensor = createSensor(port);
+        if (null == this.colorSensor) {
+            colorSensor = createSensor(port);
+        }
+    }
 
     protected EV3ColorSensor createSensor(Port port) {
         LOG.debug("createSensor({})", port);
@@ -25,22 +34,16 @@ public class ColorSensor extends Sensor {
         return sensor;
     }
 
-    private ColorSensor() {
-        colorSensor = createSensor(COLOR_SENSOR_PORT);
-        if (null == this.colorSensor) {
-            colorSensor = createSensor(COLOR_SENSOR_PORT);
-        }
+    public boolean isInitialized() {
+        LOG.debug("colorSensor {}", colorSensor);
+        return null != colorSensor;
     }
 
-    public static ColorSensor getInstance() {
-        if (null == instance) {
-            instance = new ColorSensor();
+    @Override
+    public void run() {
+        LOG.info(Thread.currentThread().getName()+" started");
+        while ( !Thread.interrupted() ) {
+            Delay.msDelay(1000);
         }
-        return instance;
-    }
-
-    public static boolean isInitialized() {
-        LOG.debug("colorSensor {}", instance);
-        return null != instance && null != instance.colorSensor;
     }
 }

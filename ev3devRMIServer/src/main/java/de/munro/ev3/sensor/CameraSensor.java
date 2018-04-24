@@ -1,20 +1,25 @@
 package de.munro.ev3.sensor;
 
+import de.munro.ev3.rmi.EV3devConstants;
 import ev3dev.sensors.ev3.EV3TouchSensor;
 import lejos.hardware.port.Port;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static de.munro.ev3.rmi.EV3devConstants.CAMERA_SENSOR_PORT;
-
 public class CameraSensor extends Sensor {
     private static final Logger LOG = LoggerFactory.getLogger(CameraSensor.class);
 
-    private static CameraSensor instance;
     private EV3TouchSensor touchSensor;
-    private final Port port = CAMERA_SENSOR_PORT;
+    private final Port port = EV3devConstants.CAMERA_SENSOR_PORT;
 
-    protected EV3TouchSensor createSensor() {
+    public CameraSensor() {
+        touchSensor = createSensor(port);
+        if (null == this.touchSensor) {
+            touchSensor = createSensor(port);
+        }
+    }
+
+    protected EV3TouchSensor createSensor(Port port) {
         LOG.debug("createSensor({})", port);
         EV3TouchSensor sensor = null;
         try {
@@ -26,26 +31,14 @@ public class CameraSensor extends Sensor {
         return sensor;
     }
 
-    private CameraSensor() {
-        touchSensor = createSensor();
-        if (null == this.touchSensor) {
-            touchSensor = createSensor();
-        }
+    public boolean isInitialized() {
+        LOG.debug("touchSensor {}", touchSensor);
+        return null != touchSensor;
     }
 
-    public static CameraSensor getInstance() {
-        if (null == instance) {
-            instance = new CameraSensor();
-        }
-        return instance;
-    }
-
-    public static boolean isInitialized() {
-        LOG.debug("touchSensor {}", instance);
-        return null != instance && null != instance.touchSensor;
-    }
-
-    public boolean isPressed () {
-        return touchSensor.isPressed();
+    @Override
+    public void run() {
+        LOG.info(Thread.currentThread().getName()+" started");
+        listenTouchSensor(touchSensor, LOG);
     }
 }

@@ -2,35 +2,32 @@ package de.munro.ev3.motor;
 
 import de.munro.ev3.rmi.EV3devConstants;
 import ev3dev.actuators.lego.motors.EV3LargeRegulatedMotor;
+import lejos.hardware.port.Port;
 import lejos.utility.Delay;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class SteeringMotor extends Motor {
     private static final Logger LOG = LoggerFactory.getLogger(SteeringMotor.class);
+    private static final int MOTOR_SPEED = 200;
 
-    private static SteeringMotor instance;
     private EV3LargeRegulatedMotor motor;
+    private final Port port = EV3devConstants.STEERING_MOTOR_PORT;
+    private final Polarity polarity = Polarity.NORMAL;
+
     private int leftmostPosition = 0;
     private int rightmostPosition = 0;
 
-    public static SteeringMotor getInstance() {
-        if (null == instance) {
-            instance = new SteeringMotor();
-        }
-        return instance;
-    }
-
-    private SteeringMotor() {
-        this.motor = createMotor(EV3devConstants.STEERING_MOTOR_PORT, Polarity.NORMAL);
+    public SteeringMotor() {
+        this.motor = createMotor(port, polarity);
         if (null == this.motor) {
-            this.motor = createMotor(EV3devConstants.STEERING_MOTOR_PORT, Polarity.NORMAL);
+            this.motor = createMotor(port, polarity);
         }
     }
 
-    public static boolean isInitialized() {
-        LOG.debug("motor {}", instance);
-        return null != instance && null != instance.motor;
+    @Override
+    public int getSpeed() {
+        return MOTOR_SPEED;
     }
 
     @Override
@@ -52,5 +49,10 @@ public class SteeringMotor extends Motor {
         rightmostPosition = -home;
         getMotor().rotateTo(home);
         Delay.msDelay(1000);
+    }
+
+    @Override
+    public void run() {
+
     }
 }

@@ -2,34 +2,28 @@ package de.munro.ev3.motor;
 
 import de.munro.ev3.rmi.EV3devConstants;
 import ev3dev.actuators.lego.motors.EV3LargeRegulatedMotor;
+import lejos.hardware.port.Port;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class DriveMotor extends Motor {
     private static final Logger LOG = LoggerFactory.getLogger(DriveMotor.class);
     private static final int MOTOR_SPEED = 200;
-    private static final Polarity MOTOR_POLARITY = Polarity.INVERSED;
 
-    private static DriveMotor instance;
     private EV3LargeRegulatedMotor motor;
+    private final Port port = EV3devConstants.DRIVE_MOTOR_PORT;
+    private final Polarity polarity = Polarity.INVERSED;
 
-    public static DriveMotor getInstance() {
-        if (null == instance) {
-            instance = new DriveMotor();
-        }
-        return instance;
-    }
-
-    private DriveMotor() {
-        this.motor = createMotor(EV3devConstants.DRIVE_MOTOR_PORT, MOTOR_POLARITY);
+    public DriveMotor() {
+        this.motor = createMotor(port, polarity);
         if (null == this.motor) {
-            this.motor = createMotor(EV3devConstants.DRIVE_MOTOR_PORT, MOTOR_POLARITY);
+            this.motor = createMotor(port, polarity);
         }
     }
 
-    public static boolean isInitialized() {
-        LOG.debug("motor {}", instance);
-        return null != instance && null != instance.motor;
+    @Override
+    public int getSpeed() {
+        return MOTOR_SPEED;
     }
 
     @Override
@@ -54,5 +48,10 @@ public class DriveMotor extends Motor {
         // go backward 25cm faster
 
         // turn back 180 degrees
+    }
+
+    @Override
+    public void run() {
+
     }
 }

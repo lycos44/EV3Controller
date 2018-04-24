@@ -1,13 +1,6 @@
 package de.munro.ev3.rmi;
 
-import de.munro.ev3.motor.CameraMotor;
-import de.munro.ev3.motor.ClimbMotor;
-import de.munro.ev3.motor.DriveMotor;
-import de.munro.ev3.motor.SteeringMotor;
-import de.munro.ev3.sensor.CameraSensor;
-import de.munro.ev3.sensor.ColorSensor;
-import de.munro.ev3.sensor.DistanceSensor;
-import de.munro.ev3.sensor.BackwardSensor;
+import de.munro.ev3.threadpool.ThreadPoolManager;
 import ev3dev.actuators.Sound;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,6 +16,7 @@ public class EV3devRMIServer extends UnicastRemoteObject implements RemoteEV3 {
     private static final String LOCAL_HOST = "localhost";
 
     private String host = LOCAL_HOST;
+    private static final ThreadPoolManager threadPoolManager = new ThreadPoolManager();
 
     public EV3devRMIServer(String[] args) throws RemoteException {
         if (args.length == 1) {
@@ -31,7 +25,7 @@ public class EV3devRMIServer extends UnicastRemoteObject implements RemoteEV3 {
     }
 
     public static void main(String args[]) {
-        LOG.info("Started {}", (Object[])args);
+        LOG.info("Started {}", (Object[]) args);
 
         try {
             LocateRegistry.createRegistry(Registry.REGISTRY_PORT);
@@ -59,10 +53,7 @@ public class EV3devRMIServer extends UnicastRemoteObject implements RemoteEV3 {
         //To Stop the motor in case of pkill java for example
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             LOG.info("Emergency stop!");
-            DriveMotor.getInstance().stop();
-            ClimbMotor.getInstance().stop();
-            SteeringMotor.getInstance().stop();
-            CameraMotor.getInstance().stop();
+            threadPoolManager.shutdown();
             LOG.info("All motors stopped");
         }));
 
@@ -78,53 +69,11 @@ public class EV3devRMIServer extends UnicastRemoteObject implements RemoteEV3 {
     }
 
     private void initialize() {
-        BackwardSensor.getInstance();
-        CameraSensor.getInstance();
-        ColorSensor.getInstance();
-        DistanceSensor.getInstance();
-
-        DriveMotor.getInstance().init();
-        ClimbMotor.getInstance().init();
-        SteeringMotor.getInstance().init();
-        CameraMotor.getInstance().init();
     }
 
     @Override
     public boolean isInitialized() throws RemoteException {
-        LOG.debug("isInitialized()");
-        if (!DistanceSensor.isInitialized()) {
-            LOG.error("distanceSensor not initialized");
-            return false;
-        }
-        if (!CameraSensor.isInitialized()) {
-            LOG.error("cameraSensor not initialized");
-            return false;
-        }
-        if (!ColorSensor.isInitialized()) {
-            LOG.error("colorSensor not initialized");
-            return false;
-        }
-        if (!BackwardSensor.isInitialized()) {
-            LOG.error("touchSensor not initialized");
-            return false;
-        }
-        if (!DriveMotor.isInitialized()) {
-            LOG.error("driveMotor not initialized");
-            return false;
-        }
-        if (!ClimbMotor.isInitialized()) {
-            LOG.error("climbMotor not initialized");
-            return false;
-        }
-        if (!SteeringMotor.isInitialized()) {
-            LOG.error("steeringMotor not initialized");
-            return false;
-        }
-        if (!CameraMotor.isInitialized()) {
-            LOG.error("cameraMotor not initialized");
-            return false;
-        }
-        return true;
+        return false;
     }
 
     @Override
@@ -139,21 +88,16 @@ public class EV3devRMIServer extends UnicastRemoteObject implements RemoteEV3 {
     @Override
     public void forward() throws RemoteException {
         LOG.debug("forward()");
-        DriveMotor.getInstance().forward();
     }
 
     @Override
     public void backward() throws RemoteException {
         LOG.debug("backward()");
-        DriveMotor.getInstance().backward();
     }
 
     @Override
     public void stop() throws RemoteException {
         LOG.debug("stop()");
-        if (DriveMotor.isInitialized()) {
-            DriveMotor.getInstance().stop();
-        }
     }
 
     @Override
