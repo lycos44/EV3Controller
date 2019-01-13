@@ -14,4 +14,7 @@ public class EV3devConstants {
     public static Port CLIMB_MOTOR_PORT = MotorPort.B;
     public static Port STEERING_MOTOR_PORT = MotorPort.C;
     public static Port CAMERA_MOTOR_PORT = MotorPort.D;
+
+    public static int SYSTEM_FINISHED_SUCCESSFULLY = 0;
+    public static int SYSTEM_UNEXPECTED_ERROR = -1;
 }

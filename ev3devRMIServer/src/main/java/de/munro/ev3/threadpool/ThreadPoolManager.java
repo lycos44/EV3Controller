@@ -1,9 +1,6 @@
 package de.munro.ev3.threadpool;
 
-import de.munro.ev3.motor.CameraMotor;
-import de.munro.ev3.motor.ClimbMotor;
-import de.munro.ev3.motor.DriveMotor;
-import de.munro.ev3.motor.SteeringMotor;
+import de.munro.ev3.motor.*;
 import de.munro.ev3.sensor.BackwardSensor;
 import de.munro.ev3.sensor.CameraSensor;
 import de.munro.ev3.sensor.ColorSensor;
@@ -19,13 +16,18 @@ import java.util.concurrent.Executors;
 public class ThreadPoolManager {
     private static final Logger LOG = LoggerFactory.getLogger(ThreadPoolManager.class);
 
-    private static ThreadPoolManager instance;
     private ExecutorService executor;
     private Queue<Task> taskQueue;
+
     private BackwardSensor backwardSensor;
     private CameraSensor cameraSensor;
     private ColorSensor colorSensor;
     private DistanceSensor distanceSensor;
+
+    private DriveMotor driveMotor;
+    private ClimbMotor climbMotor;
+    private SteeringMotor steeringMotor;
+    private CameraMotor cameraMotor;
 
     public ThreadPoolManager() {
         taskQueue = new LinkedList<>();
@@ -33,28 +35,31 @@ public class ThreadPoolManager {
         taskQueue.add(new Task(Task.ActionType.init, Task.MotorType.camera));
 
         executor = Executors.newFixedThreadPool(8);
-
-        backwardSensor = createBackwardSensor();
-        executor.execute(backwardSensor);
-        cameraSensor = new CameraSensor();
-        executor.execute(cameraSensor);
-        colorSensor = new ColorSensor();
-        executor.execute(colorSensor);
-        distanceSensor = new DistanceSensor();
-        executor.execute(distanceSensor);
-
-        executor.execute(new DriveMotor());
-        executor.execute(new ClimbMotor());
-        executor.execute(new SteeringMotor());
-        executor.execute(new CameraMotor(this));
     }
 
-    /**
-     * for test
-     * @return BackwardSensor
-     */
-    protected BackwardSensor createBackwardSensor() {
-        return new BackwardSensor();
+    public void initialize() {
+//        try {
+//            backwardSensor = new BackwardSensor();
+//            executor.execute(backwardSensor);
+//            cameraSensor = new CameraSensor();
+//            executor.execute(cameraSensor);
+//            colorSensor = new ColorSensor();
+//            executor.execute(colorSensor);
+//            distanceSensor = new DistanceSensor();
+//            executor.execute(distanceSensor);
+//
+//            driveMotor = new DriveMotor(this);
+//            executor.execute(driveMotor);
+//            climbMotor = new ClimbMotor();
+//            executor.execute(climbMotor);
+//            steeringMotor = new SteeringMotor();
+//            executor.execute(steeringMotor);
+//            cameraMotor = new CameraMotor(this);
+//            executor.execute(cameraMotor);
+//        } catch (EV3MotorInitializationException e) {
+//            LOG.error(e.getMessage(), e);
+//            this.shutdown();
+//        }
     }
 
     public void shutdown() {
@@ -62,16 +67,21 @@ public class ThreadPoolManager {
         executor.shutdown();
     }
 
-    void addTask (Task.ActionType actionType, Task.MotorType ... types) {
+    void addTask(Task.ActionType actionType, Task.MotorType... types) {
+        LOG.info("add Task: {}, {}", actionType, types );
         Task task = new Task(actionType, types);
         taskQueue.add(task);
     }
 
     public synchronized Task getTask() {
-        return taskQueue.element();
+        if (!taskQueue.isEmpty()) {
+            return taskQueue.element();
+        }
+        return null;
     }
 
     public void setTaskDone(Task.MotorType motorType) {
+        LOG.info("setTaskDone({})", motorType);
         Task task = getTask();
         task.unsetAssignedTo(motorType);
         if (task.isDone()) {
@@ -97,5 +107,23 @@ public class ThreadPoolManager {
 
     public Queue<Task> getTaskQueue() {
         return taskQueue;
+    }
+
+    public boolean isInitialized() {
+        if (!backwardSensor.isInitialized()) return false;
+        if (!cameraSensor.isInitialized()) return false;
+        if (!colorSensor.isInitialized()) return false;
+        if (!distanceSensor.isInitialized()) return false;
+
+        if (null != driveMotor && !driveMotor.isInitialized()) return false;
+        if (null != climbMotor && !climbMotor.isInitialized()) return false;
+        if (null != steeringMotor && !steeringMotor.isInitialized()) return false;
+        if (null != cameraMotor && !cameraMotor.isInitialized()) return false;
+
+        return true;
+    }
+
+    public void execute(Motor motor) {
+        executor.execute(motor);
     }
 }

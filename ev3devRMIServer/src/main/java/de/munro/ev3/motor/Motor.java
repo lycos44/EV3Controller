@@ -2,7 +2,7 @@ package de.munro.ev3.motor;
 
 import de.munro.ev3.rmi.EV3Device;
 import de.munro.ev3.threadpool.Task;
-import ev3dev.actuators.lego.motors.EV3LargeRegulatedMotor;
+import ev3dev.actuators.lego.motors.BaseRegulatedMotor;
 import lejos.hardware.port.Port;
 import lejos.utility.Delay;
 import org.slf4j.Logger;
@@ -10,24 +10,19 @@ import org.slf4j.LoggerFactory;
 
 public abstract class Motor implements EV3Device {
     private static final Logger LOG = LoggerFactory.getLogger(Motor.class);
+
     public enum Polarity {
         NORMAL,
         INVERSED
     }
-    private Polarity polarity = Polarity.NORMAL;
+    private final Port port;
+    private final Polarity polarity;
+    private final Task.MotorType motorType;
 
-    EV3LargeRegulatedMotor createMotor(Port port, Polarity polarity) {
-        LOG.debug("createMotor({})", port);
+    public Motor(Port port, Polarity polarity, Task.MotorType motorType) {
+        this.port = port;
         this.polarity = polarity;
-        EV3LargeRegulatedMotor motor = null;
-        try {
-            motor = new EV3LargeRegulatedMotor(port);
-            motor.brake();
-            motor.setSpeed(getSpeed());
-        } catch (Exception ex) {
-            LOG.error(ex.getMessage(), ex);
-        }
-        return motor;
+        this.motorType = motorType;
     }
 
     public boolean isInitialized() {
@@ -35,19 +30,25 @@ public abstract class Motor implements EV3Device {
         return null != getMotor();
     }
 
-    public abstract int getSpeed();
+    public int getSpeed() {
+        return getMotor().getSpeed();
+    }
 
-    public abstract EV3LargeRegulatedMotor getMotor();
+    abstract BaseRegulatedMotor getMotor();
+
+    public Port getPort() {
+        return port;
+    }
 
     public Polarity getPolarity() {
         return polarity;
     }
 
-    public void setPolarity(Polarity polarity) {
-        this.polarity = polarity;
+    public Task.MotorType getMotorType() {
+        return motorType;
     }
 
-    void forward() {
+    public void forward() {
         switch (polarity) {
             case NORMAL:
                 getMotor().forward();
@@ -58,7 +59,7 @@ public abstract class Motor implements EV3Device {
         }
     }
 
-    void backward() {
+    public void backward() {
         switch (polarity) {
             case NORMAL:
                 getMotor().backward();
@@ -69,7 +70,7 @@ public abstract class Motor implements EV3Device {
         }
     }
 
-    void forwardTillStalled() {
+    public void forwardTillStalled() {
         LOG.debug("forwardTillStalled()");
         while (!getMotor().isStalled()) {
             forward();
@@ -79,7 +80,7 @@ public abstract class Motor implements EV3Device {
         LOG.debug("stalled position: {}", getMotor().getTachoCount());
     }
 
-    void backwardTillStalled() {
+    public void backwardTillStalled() {
         LOG.debug("backwardTillStalled()");
         while (!getMotor().isStalled()) {
             backward();
