@@ -1,6 +1,5 @@
 package de.munro.ev3.sensor;
 
-import de.munro.ev3.rmi.EV3Device;
 import de.munro.ev3.threadpool.Event;
 import ev3dev.sensors.BaseSensor;
 import ev3dev.sensors.ev3.EV3TouchSensor;
@@ -8,7 +7,7 @@ import lejos.utility.Delay;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public abstract class Sensor implements EV3Device {
+public abstract class Sensor {
     public static final int TOUCHSENSOR_PRESSED = 1;
     private Event event;
 

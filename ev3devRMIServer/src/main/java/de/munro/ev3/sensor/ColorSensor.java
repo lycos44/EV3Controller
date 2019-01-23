@@ -18,10 +18,4 @@ public class ColorSensor extends Sensor {
     public EV3ColorSensor getSensor() {
         return sensor;
     }
-
-    @Override
-    public void run() {
-        LOG.info(Thread.currentThread().getName()+" started");
-
-    }
 }

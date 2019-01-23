@@ -14,13 +14,12 @@ public class BackwardSensor extends Sensor {
         sensor = new EV3TouchSensor(EV3devConstants.BACKWARD_SENSOR_PORT);
     }
 
+    @Override
     public EV3TouchSensor getSensor() {
         return sensor;
     }
 
-    @Override
-    public void run() {
-        LOG.info(Thread.currentThread().getName()+" started");
-        listenTouchSensor(sensor, LOG);
+    public boolean isPressed() {
+        return sensor.isPressed();
     }
 }

@@ -1,10 +1,11 @@
 package de.munro.ev3.motor;
 
 import de.munro.ev3.rmi.EV3devConstants;
+import de.munro.ev3.sensor.CameraSensor;
 import de.munro.ev3.threadpool.Task;
 import ev3dev.actuators.lego.motors.BaseRegulatedMotor;
 import ev3dev.actuators.lego.motors.EV3MediumRegulatedMotor;
-import lejos.utility.Delay;
+import lejos.hardware.port.Port;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -12,33 +13,38 @@ public class CameraMotor extends Motor {
     private static final Logger LOG = LoggerFactory.getLogger(CameraMotor.class);
     private static final int MOTOR_SPEED = 400;
 
-    private static final int TURN_LEFT = 1;
-    private static final int TURN_RIGHT = -1;
-
     private BaseRegulatedMotor motor;
 
-    private final int homePosition = 0;
-    private int lastDirection = 0;
     private int leftmostPosition = 0;
     private int rightmostPosition = 0;
+    private int homePosition = 0;
+    private CameraSensor cameraSensor;
 
     /**
      * Constructor
+     * @param cameraSensor
      */
-    public CameraMotor() {
-        super(EV3devConstants.CAMERA_MOTOR_PORT, Polarity.INVERSED, Task.MotorType.camera);
-        this.motor = new EV3MediumRegulatedMotor(EV3devConstants.CAMERA_MOTOR_PORT);
-        this.motor.setAcceleration(MOTOR_SPEED);
+    public CameraMotor(CameraSensor cameraSensor) {
+        super(EV3devConstants.CAMERA_MOTOR_PORT, Polarity.NORMAL, Task.MotorType.camera);
+        this.cameraSensor = cameraSensor;
+        this.motor = createMotor(EV3devConstants.CAMERA_MOTOR_PORT);
+        this.motor.setSpeed(MOTOR_SPEED);
     }
 
-    public void initialize() throws EV3MotorInitializationException {
+    private EV3MediumRegulatedMotor createMotor(Port port) {
+        try {
+            return new EV3MediumRegulatedMotor(port);
+        } catch (RuntimeException e) {
+            LOG.error("Catch", e);
+        }
+        return null;
     }
 
     /**
      * @link Motor#getMotor()
      */
     @Override
-    public BaseRegulatedMotor getMotor() {
+    BaseRegulatedMotor getMotor() {
         return motor;
     }
 
@@ -48,112 +54,47 @@ public class CameraMotor extends Motor {
     @Override
     public void init() {
         LOG.debug("init()");
-        rotateTillSensorPressed(TURN_LEFT);
-        getMotor().resetTachoCount();
-        int left = getMotor().getTachoCount();
-        LOG.debug("left: {}", left);
-        rotateTillSensorPressed(TURN_RIGHT);
-        int right = getMotor().getTachoCount();
-        LOG.debug("right: {}", right);
-        int home = (left+right)/2;
-        leftmostPosition = home;
-        rightmostPosition = -home;
-        LOG.debug("home: {}", home);
-        getMotor().resetTachoCount();
-        rotateTo(TURN_LEFT, home);
-        getMotor().resetTachoCount();
+        // search for the position that can be set to zero
+        getMotor().backward();
+        boolean cameraSensorIritated = isCameraSensorPressed();
+        while(!isCameraSensorPressed() || cameraSensorIritated) {
+            if (cameraSensorIritated) {
+                cameraSensorIritated = isCameraSensorPressed();
+            }
+        }
+        stop();
+        resetTachoCount();
+        getMotor().forward();
+        cameraSensorIritated = isCameraSensorPressed();
+        while(!isCameraSensorPressed() || cameraSensorIritated) {
+            if (cameraSensorIritated) {
+                cameraSensorIritated = isCameraSensorPressed();
+            }
+        }
+        stop();
+        leftmostPosition = getTachoCount();
+        rightmostPosition = 0;
+        homePosition = leftmostPosition/2-100;
+        rotateTo(homePosition);
         LOG.debug("(left, home, right): ({}, {}, {})", leftmostPosition, homePosition, rightmostPosition);
     }
 
     private boolean isCameraSensorPressed() {
-        return false;
+        return cameraSensor.isPressed();
     }
 
-    /**
-     * the rotation of the motor proceeds into the direction until the corresponding touchSensor is pressed.
-     * @param direction
-     */
-    public void rotateTillSensorPressed(int direction) {
-        LOG.debug("rotateTillSensorPressed({})", direction==1?"left":"right");
-        while ( !isCameraSensorPressed() || lastDirection != direction ) {
-            go(direction);
-            // when changing the direction, the sensor still stays pressed for some time.
-            if ( !isCameraSensorPressed() && lastDirection != direction ) {
-                lastDirection = direction;
-                LOG.debug("lastDirection {}", lastDirection==1?"left":"right");
-            }
-            Delay.msDelay(100);
-        }
-        // the event is removed by the sensor itself, when the sensor is not pressed anymore
-        getMotor().stop();
-        LOG.debug("stalled position: {}", getMotor().getTachoCount());
+    public void goHome() {
+        LOG.debug("goHome()");
+        rotateTo(homePosition);
     }
 
-    /**
-     * the motor rotates into the direction until the limitAngle has been reached.
-     * @param direction
-     * @param limitAngle
-     */
-    private void rotateTo(int direction, int limitAngle) {
-        LOG.debug("rotateTo({}, {}) lastDirection {}", direction==1?"left":"right", limitAngle, lastDirection==1?"left":"right");
-        int currentPosition = getMotor().getTachoCount();
-        LOG.debug("(currentPosition: {}, limitAngle: {})", currentPosition, limitAngle);
-        getMotor().rotateTo(limitAngle);
-//        while ( (!isCameraSensorPressed() || lastDirection != direction) && currentPosition < limitAngle ) {
-//            go(direction);
-//            if ( !isCameraSensorPressed() && lastDirection != direction ) {
-//                lastDirection = direction;
-//                LOG.debug("lastDirection {}", lastDirection==1?"left":"right");
-//            }
-//            LOG.debug("CameraSensor.isPressed(): {}", isCameraSensorPressed());
-//            currentPosition = getMotor().getTachoCount();
-//            LOG.debug("(currentPosition: {}, limitAngle: {})", currentPosition, limitAngle);
-//            Delay.msDelay(100);
-//        }
-//        getMotor().stop();
-        LOG.debug("stalled position: {}", getMotor().getTachoCount());
+    public void goLeft() {
+        LOG.debug("goLeft()");
+        rotateTo(leftmostPosition);
     }
 
-    /**
-     * @link Runnable#run()
-     */
-    @Override
-    public void run() {
-        LOG.info(Thread.currentThread().getName()+" started");
-        while ( !Thread.interrupted() ) {
-//            Task task = threadPoolManager.getTask();
-//            if (null != task && task.isAssignedTo(getMotorType())) {
-//                proceedTask(task.getActionType());
-//                threadPoolManager.setTaskDone(Task.MotorType.camera);
-//            }
-            Delay.msDelay(1000);
-        }
-        this.stop();
-        LOG.info(Thread.currentThread().getName()+" stopped");
-    }
-
-    private void go(int direction) {
-        switch (direction) {
-            case TURN_LEFT:
-                forward();
-                break;
-            case TURN_RIGHT:
-                backward();
-                break;
-        }
-    }
-
-    /**
-     * @return leftmostPosition
-     */
-    int getLeftmostPosition() {
-        return leftmostPosition;
-    }
-
-    /**
-     * @return rightmostPosition
-     */
-    int getRightmostPosition() {
-        return  rightmostPosition;
+    public void goRight() {
+        LOG.debug("goRight()");
+        rotateTo(rightmostPosition);
     }
 }

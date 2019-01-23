@@ -1,14 +1,12 @@
 package de.munro.ev3.motor;
 
-import de.munro.ev3.rmi.EV3Device;
 import de.munro.ev3.threadpool.Task;
 import ev3dev.actuators.lego.motors.BaseRegulatedMotor;
 import lejos.hardware.port.Port;
-import lejos.utility.Delay;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public abstract class Motor implements EV3Device {
+public abstract class Motor {
     private static final Logger LOG = LoggerFactory.getLogger(Motor.class);
 
     public enum Polarity {
@@ -49,51 +47,94 @@ public abstract class Motor implements EV3Device {
     }
 
     public void forward() {
+        LOG.debug("forward.polarity: {}", polarity);
         switch (polarity) {
             case NORMAL:
+                LOG.debug("getMotor().forward()");
                 getMotor().forward();
                 break;
             case INVERSED:
+                LOG.debug("getMotor().backward()");
                 getMotor().backward();
                 break;
         }
     }
 
     public void backward() {
+        LOG.debug("backward.polarity: {}", polarity);
         switch (polarity) {
             case NORMAL:
+                LOG.debug("getMotor().backward()");
                 getMotor().backward();
                 break;
             case INVERSED:
+                LOG.debug("getMotor().forward()");
                 getMotor().forward();
                 break;
         }
     }
 
+    public void rotateToPosition(int position) {
+        int currentPosition = getTachoCount();
+        LOG.debug("rotateToPosition: {}, to: {}", currentPosition, position);
+        if (currentPosition < position) {
+            backward();
+            while (!getMotor().isStalled() && getTachoCount() < position) {
+                LOG.debug("moving position: {}, to: {}, left: {}", getTachoCount(), position, getTachoCount() < position);
+            }
+        } else {
+            forward();
+            while (!getMotor().isStalled() && getTachoCount() > position) {
+                LOG.debug("moving position: {}, to: {}, right: {}", getTachoCount(), position, getTachoCount() > position);
+            }
+        }
+        LOG.debug("stop position: {}, to: {}, isStalled: {}", getTachoCount(), position, getMotor().isStalled());
+        stop();
+    }
+
     public void forwardTillStalled() {
         LOG.debug("forwardTillStalled()");
+        forward();
         while (!getMotor().isStalled()) {
-            forward();
-            Delay.msDelay(1000);
+            LOG.debug("moving position: {}, isStalled: {}", getTachoCount(), getMotor().isStalled());
         }
-        getMotor().stop();
-        LOG.debug("stalled position: {}", getMotor().getTachoCount());
+        stop();
+        LOG.debug("stalled position: {}, isStalled: {}", getTachoCount(), getMotor().isStalled());
     }
 
     public void backwardTillStalled() {
         LOG.debug("backwardTillStalled()");
+        backward();
         while (!getMotor().isStalled()) {
-            backward();
-            Delay.msDelay(1000);
+            LOG.debug("moving position: {}, isStalled: {}", getTachoCount(), getMotor().isStalled());
         }
-        getMotor().stop();
-        LOG.debug("stalled position: {}", getMotor().getTachoCount());
+        stop();
+        LOG.debug("stalled position: {}, isStalled: {}", getTachoCount(), getMotor().isStalled());
     }
 
     public void stop() {
+        LOG.debug("{}.stop()", getMotorType());
         getMotor().stop();
     }
 
+    public void brake() {
+        LOG.debug("{}.brake()", getMotorType());
+        getMotor().brake();
+    }
+
+    public void rotateTo(int angle) {
+        LOG.debug("rotate({})", angle);
+        getMotor().rotateTo(angle);
+    }
+
+    public int getTachoCount() {
+        return getMotor().getTachoCount();
+    }
+
+    public void resetTachoCount() {
+        LOG.debug("resetTachoCount()");
+        getMotor().resetTachoCount();
+    }
     public abstract void init();
 
     void proceedTask(Task.ActionType actionType) {
