@@ -10,10 +10,16 @@ public class ColorSensor extends Sensor {
 
     private EV3ColorSensor sensor;
 
+    /**
+     * Constructor
+     */
     public ColorSensor() {
         sensor = new EV3ColorSensor(EV3devConstants.COLOR_SENSOR_PORT);
     }
 
+    /**
+     * @link Sensor#getSensor
+     */
     @Override
     public EV3ColorSensor getSensor() {
         return sensor;

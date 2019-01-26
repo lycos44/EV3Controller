@@ -1,7 +1,6 @@
 package de.munro.ev3.motor;
 
 import de.munro.ev3.rmi.EV3devConstants;
-import de.munro.ev3.threadpool.Task;
 import ev3dev.actuators.lego.motors.BaseRegulatedMotor;
 import ev3dev.actuators.lego.motors.EV3LargeRegulatedMotor;
 import lejos.hardware.port.Port;
@@ -21,12 +20,16 @@ public class ClimbMotor extends Motor {
      * Constructor
      */
     public ClimbMotor() {
-        super(EV3devConstants.CLIMB_MOTOR_PORT, Polarity.INVERSED, Task.MotorType.climb);
+        super(EV3devConstants.CLIMB_MOTOR_PORT, Polarity.INVERSED, MotorType.climb);
         this.motor = createMotor(EV3devConstants.CLIMB_MOTOR_PORT);
         this.motor.setSpeed(MOTOR_SPEED);
     }
 
-    private EV3LargeRegulatedMotor createMotor(Port port) {
+    /**
+     * @link Motor#createMotor()
+     */
+    @Override
+    EV3LargeRegulatedMotor createMotor(Port port) {
         try {
             return new EV3LargeRegulatedMotor(port);
         } catch (RuntimeException e) {
@@ -41,6 +44,14 @@ public class ClimbMotor extends Motor {
     @Override
     BaseRegulatedMotor getMotor() {
         return motor;
+    }
+
+    /**
+     * @link Motor#is2BeStopped()
+     */
+    @Override
+    boolean is2BeStopped() {
+        return false;
     }
 
     /**

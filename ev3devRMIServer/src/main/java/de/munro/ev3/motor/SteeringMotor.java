@@ -1,7 +1,6 @@
 package de.munro.ev3.motor;
 
 import de.munro.ev3.rmi.EV3devConstants;
-import de.munro.ev3.threadpool.Task;
 import ev3dev.actuators.lego.motors.BaseRegulatedMotor;
 import ev3dev.actuators.lego.motors.EV3MediumRegulatedMotor;
 import lejos.hardware.port.Port;
@@ -22,12 +21,16 @@ public class SteeringMotor extends Motor {
      * Constructor
      */
     public SteeringMotor() {
-        super(EV3devConstants.STEERING_MOTOR_PORT, Polarity.NORMAL, Task.MotorType.steering);
+        super(EV3devConstants.STEERING_MOTOR_PORT, Polarity.NORMAL, MotorType.steering);
         this.motor = createMotor(EV3devConstants.STEERING_MOTOR_PORT);
         this.motor.setSpeed(MOTOR_SPEED);
     }
 
-    private EV3MediumRegulatedMotor createMotor(Port port) {
+    /**
+     * @link Motor#createMotor()
+     */
+    @Override
+    EV3MediumRegulatedMotor createMotor(Port port) {
         try {
             return new EV3MediumRegulatedMotor(port);
         } catch (RuntimeException e) {
@@ -45,23 +48,24 @@ public class SteeringMotor extends Motor {
     }
 
     /**
+     * @link Motor#is2BeStopped()
+     */
+    @Override
+    boolean is2BeStopped() {
+        return isStalled();
+    }
+
+    /**
      * @link Motor#init()
      */
     @Override
     public void init() {
         LOG.debug("init()");
         // search for the position that can be set to zero
-        backward();
-        while(!getMotor().isStalled()) {
-        }
-        stop();
+        rotateTillStopped(Direction.BACKWARD);
         resetTachoCount();
-        forward();
-        while(!getMotor().isStalled()) {
-        }
-        stop();
+        rotateTillStopped(Direction.FORWARD);
         leftmostPosition = getTachoCount();
-        rightmostPosition = 0;
         homePosition = leftmostPosition/2;
         rotateTo(homePosition);
         LOG.debug("(left, home, right): ({}, {}, {})", leftmostPosition, homePosition, rightmostPosition);

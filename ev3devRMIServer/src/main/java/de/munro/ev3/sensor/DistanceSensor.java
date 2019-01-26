@@ -10,19 +10,29 @@ public class DistanceSensor extends Sensor {
     private static final Logger LOG = LoggerFactory.getLogger(DistanceSensor.class);
 
     private EV3UltrasonicSensor sensor;
-    private SampleProvider sampleProvider;
 
+    /**
+     * Constructor
+     */
     public DistanceSensor() {
         sensor = new EV3UltrasonicSensor(EV3devConstants.DISTANCE_SENSOR_PORT);
-        sampleProvider = sensor.getDistanceMode();
     }
 
+    /**
+     * @link Sensor#getSensor
+     */
     @Override
     public EV3UltrasonicSensor getSensor() {
         return sensor;
     }
 
+    /**
+     * provides the distance currently measured
+     * @return distance
+     */
     public int getDistance() {
+        LOG.debug("getDistance()");
+        SampleProvider sampleProvider = getSensor().getDistanceMode();
         float [] sample = new float[sampleProvider.sampleSize()];
         sampleProvider.fetchSample(sample, 0);
         return  (int)sample[0];

@@ -1,7 +1,6 @@
 package de.munro.ev3.motor;
 
 import de.munro.ev3.rmi.EV3devConstants;
-import de.munro.ev3.threadpool.Task;
 import ev3dev.actuators.lego.motors.BaseRegulatedMotor;
 import ev3dev.actuators.lego.motors.EV3LargeRegulatedMotor;
 import lejos.hardware.port.Port;
@@ -14,13 +13,20 @@ public class DriveMotor extends Motor {
 
     private BaseRegulatedMotor motor;
 
+    /**
+     * Constructor
+     */
     public DriveMotor() {
-        super(EV3devConstants.DRIVE_MOTOR_PORT, Polarity.INVERSED, Task.MotorType.drive);
+        super(EV3devConstants.DRIVE_MOTOR_PORT, Polarity.INVERSED, MotorType.drive);
         this.motor = createMotor(EV3devConstants.DRIVE_MOTOR_PORT);
         this.motor.setSpeed(MOTOR_SPEED);
     }
 
-    private EV3LargeRegulatedMotor createMotor(Port port) {
+    /**
+     * @link Motor#createMotor()
+     */
+    @Override
+    EV3LargeRegulatedMotor createMotor(Port port) {
         try {
             return new EV3LargeRegulatedMotor(port);
         } catch (RuntimeException e) {
@@ -29,11 +35,25 @@ public class DriveMotor extends Motor {
         return null;
     }
 
+    /**
+     * @link Motor#getMotor()
+     */
     @Override
     BaseRegulatedMotor getMotor() {
         return motor;
     }
 
+    /**
+     * @link Motor#is2BeStopped()
+     */
+    @Override
+    boolean is2BeStopped() {
+        return false;
+    }
+
+    /**
+     * @link Motor#init()
+     */
     @Override
     public void init() {
     }

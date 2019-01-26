@@ -56,7 +56,7 @@ public class DeviceRunner {
         cameraMotor.init();
         climbMotor.init();
         //Robot control loop
-        final int iteration_threshold = 200;
+        final int iteration_threshold = 400;
         for(int i = 0; i <= iteration_threshold; i++) {
             driveMotor.forward();
 

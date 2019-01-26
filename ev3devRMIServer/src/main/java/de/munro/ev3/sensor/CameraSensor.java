@@ -10,16 +10,26 @@ public class CameraSensor extends Sensor {
 
     private EV3TouchSensor sensor;
 
+    /**
+     * Constructor
+     */
     public CameraSensor() {
         sensor = new EV3TouchSensor(EV3devConstants.CAMERA_SENSOR_PORT);
     }
 
+    /**
+     * @link Sensor#getSensor
+     */
     @Override
     public EV3TouchSensor getSensor() {
         return sensor;
     }
 
+    /**
+     * @link EV3TouchSensor#isPressed
+     */
     public boolean isPressed() {
-        return sensor.isPressed();
+        LOG.debug("isPressed()");
+        return getSensor().isPressed();
     }
 }

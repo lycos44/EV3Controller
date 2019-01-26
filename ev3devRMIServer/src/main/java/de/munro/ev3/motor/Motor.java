@@ -1,6 +1,5 @@
 package de.munro.ev3.motor;
 
-import de.munro.ev3.threadpool.Task;
 import ev3dev.actuators.lego.motors.BaseRegulatedMotor;
 import lejos.hardware.port.Port;
 import org.slf4j.Logger;
@@ -9,46 +8,120 @@ import org.slf4j.LoggerFactory;
 public abstract class Motor {
     private static final Logger LOG = LoggerFactory.getLogger(Motor.class);
 
+    public enum Direction {
+        FORWARD,
+        BACKWARD,
+        NOT_SET
+    }
     public enum Polarity {
         NORMAL,
         INVERSED
     }
+    public enum MotorType {
+        camera,
+        climb,
+        drive,
+        steering
+    }
+
     private final Port port;
     private final Polarity polarity;
-    private final Task.MotorType motorType;
+    private final MotorType motorType;
+    private Direction directionStalled = Direction.NOT_SET;
 
-    public Motor(Port port, Polarity polarity, Task.MotorType motorType) {
+    /**
+     * Constructor
+     */
+    public Motor(Port port, Polarity polarity, MotorType motorType) {
         this.port = port;
         this.polarity = polarity;
         this.motorType = motorType;
     }
 
+    /**
+     * information about the member motor instance
+     * @return true, if the member motor is not null
+     */
     public boolean isInitialized() {
-        LOG.debug("motor {}", getMotor());
+        LOG.debug("isInitialized()");
         return null != getMotor();
     }
 
+    /**
+     * @link BaseRegulatedMotor#getSpeed()
+     */
     public int getSpeed() {
         return getMotor().getSpeed();
     }
 
+    /**
+     * @return motor
+     */
     abstract BaseRegulatedMotor getMotor();
 
+    /**
+     * @return port
+     */
     public Port getPort() {
         return port;
     }
 
+    /**
+     * @return polarity
+     */
     public Polarity getPolarity() {
         return polarity;
     }
 
-    public Task.MotorType getMotorType() {
+    /**
+     * @return motorType
+     */
+    public MotorType getMotorType() {
         return motorType;
     }
 
+    /**
+     * @return motorType
+     */
+    public Direction getDirectionStalled() {
+        return directionStalled;
+    }
+
+    /**
+     * @param directionStalled
+     */
+    public void setDirectionStalled(Direction directionStalled) {
+        this.directionStalled = directionStalled;
+    }
+
+    /**
+     * provides information about the status of the motor
+     * @return true, if the motor has to be stopped
+     */
+    abstract boolean is2BeStopped();
+
+    /**
+     * @link BaseRegulatedMotor#isStalled()
+     */
+    public boolean isStalled() {
+        return getMotor().isStalled();
+    }
+
+    /**
+     * create a new motor instance
+     * @param port motor connected to
+     * @return EV3MediumRegulatedMotor
+     */
+    abstract BaseRegulatedMotor createMotor(Port port);
+
+    /**
+     * calls {@link BaseRegulatedMotor#backward()} or {@link BaseRegulatedMotor#forward()}
+     * depending on the polarity of the current motor instance
+     */
     public void forward() {
-        LOG.debug("forward.polarity: {}", polarity);
-        switch (polarity) {
+        LOG.debug("forward.polarity: {}", getPolarity());
+        setDirectionStalled(Direction.NOT_SET);
+        switch (getPolarity()) {
             case NORMAL:
                 LOG.debug("getMotor().forward()");
                 getMotor().forward();
@@ -60,9 +133,13 @@ public abstract class Motor {
         }
     }
 
+    /**
+     * calls @link BaseRegulatedMotor#backward() or @link BaseRegulatedMotor#forward()
+     * depending on the polarity of the current motor instance
+     */
     public void backward() {
-        LOG.debug("backward.polarity: {}", polarity);
-        switch (polarity) {
+        LOG.debug("backward.polarity: {}", getPolarity());
+        switch (getPolarity()) {
             case NORMAL:
                 LOG.debug("getMotor().backward()");
                 getMotor().backward();
@@ -74,73 +151,68 @@ public abstract class Motor {
         }
     }
 
-    public void rotateToPosition(int position) {
-        int currentPosition = getTachoCount();
-        LOG.debug("rotateToPosition: {}, to: {}", currentPosition, position);
-        if (currentPosition < position) {
-            backward();
-            while (!getMotor().isStalled() && getTachoCount() < position) {
-                LOG.debug("moving position: {}, to: {}, left: {}", getTachoCount(), position, getTachoCount() < position);
-            }
-        } else {
-            forward();
-            while (!getMotor().isStalled() && getTachoCount() > position) {
-                LOG.debug("moving position: {}, to: {}, right: {}", getTachoCount(), position, getTachoCount() > position);
-            }
+    /**
+     * rotate in direction until the call of is2BeStopped provides true
+     * @param direction
+     */
+    public void rotateTillStopped(Direction direction) {
+        LOG.debug("rotateTillStopped()");
+        if (getDirectionStalled().equals(direction)) {
+            LOG.debug("Tried to rotate in stalled direction");
+            return;
         }
-        LOG.debug("stop position: {}, to: {}, isStalled: {}", getTachoCount(), position, getMotor().isStalled());
+        switch (direction) {
+            case FORWARD: forward();
+            break;
+            case BACKWARD: backward();
+        }
+        while(!is2BeStopped()) {
+        }
+        setDirectionStalled(direction);
         stop();
     }
 
-    public void forwardTillStalled() {
-        LOG.debug("forwardTillStalled()");
-        forward();
-        while (!getMotor().isStalled()) {
-            LOG.debug("moving position: {}, isStalled: {}", getTachoCount(), getMotor().isStalled());
-        }
-        stop();
-        LOG.debug("stalled position: {}, isStalled: {}", getTachoCount(), getMotor().isStalled());
-    }
-
-    public void backwardTillStalled() {
-        LOG.debug("backwardTillStalled()");
-        backward();
-        while (!getMotor().isStalled()) {
-            LOG.debug("moving position: {}, isStalled: {}", getTachoCount(), getMotor().isStalled());
-        }
-        stop();
-        LOG.debug("stalled position: {}, isStalled: {}", getTachoCount(), getMotor().isStalled());
-    }
-
+    /**
+     * @link BaseRegulatedMotor#stop()
+     */
     public void stop() {
         LOG.debug("{}.stop()", getMotorType());
         getMotor().stop();
     }
 
+    /**
+     * @link BaseRegulatedMotor#brake()
+     */
     public void brake() {
         LOG.debug("{}.brake()", getMotorType());
         getMotor().brake();
     }
 
+    /**
+     * @link BaseRegulatedMotor#rotateTo()
+     */
     public void rotateTo(int angle) {
         LOG.debug("rotate({})", angle);
         getMotor().rotateTo(angle);
     }
 
+    /**
+     * @link BaseRegulatedMotor#getTachoCount()
+     */
     public int getTachoCount() {
         return getMotor().getTachoCount();
     }
 
+    /**
+     * @link BaseRegulatedMotor#resetTachoCount()
+     */
     public void resetTachoCount() {
         LOG.debug("resetTachoCount()");
         getMotor().resetTachoCount();
     }
-    public abstract void init();
 
-    void proceedTask(Task.ActionType actionType) {
-        switch (actionType) {
-            case init:
-                init();
-        }
-    }
+    /**
+     * initialize status of motor, i.e., find home position
+     */
+    public abstract void init();
 }
