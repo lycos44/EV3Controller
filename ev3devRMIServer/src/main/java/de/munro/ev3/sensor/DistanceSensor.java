@@ -1,46 +1,40 @@
 package de.munro.ev3.sensor;
 
+import de.munro.ev3.rmi.EV3devConstants;
 import ev3dev.sensors.ev3.EV3UltrasonicSensor;
-import lejos.hardware.port.Port;
+import lejos.robotics.SampleProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static de.munro.ev3.rmi.EV3devConstants.DISTANCE_SENSOR_PORT;
 
 public class DistanceSensor extends Sensor {
     private static final Logger LOG = LoggerFactory.getLogger(DistanceSensor.class);
 
-    private static DistanceSensor instance;
-    private EV3UltrasonicSensor ultrasonicSensor;
+    private EV3UltrasonicSensor sensor;
 
-    protected EV3UltrasonicSensor createSensor(Port port) {
-        LOG.debug("createSensor({})", port);
-        EV3UltrasonicSensor sensor = null;
-        try {
-            sensor = new EV3UltrasonicSensor(DISTANCE_SENSOR_PORT);
-            LOG.debug("sensor {}", sensor);
-        } catch (Exception ex) {
-            LOG.error(ex.getMessage(), ex);
-        }
+    /**
+     * Constructor
+     */
+    public DistanceSensor() {
+        sensor = new EV3UltrasonicSensor(EV3devConstants.DISTANCE_SENSOR_PORT);
+    }
+
+    /**
+     * @link Sensor#getSensor
+     */
+    @Override
+    public EV3UltrasonicSensor getSensor() {
         return sensor;
     }
 
-    private DistanceSensor() {
-        ultrasonicSensor = createSensor(DISTANCE_SENSOR_PORT);
-        if (null == this.ultrasonicSensor) {
-            ultrasonicSensor = createSensor(DISTANCE_SENSOR_PORT);
-        }
-    }
-
-    public static DistanceSensor getInstance() {
-        if (null == instance) {
-            instance = new DistanceSensor();
-        }
-        return instance;
-    }
-
-    public static boolean isInitialized() {
-        LOG.debug("distanceSensor {}", instance);
-        return null != instance && null != instance.ultrasonicSensor;
+    /**
+     * provides the distance currently measured
+     * @return distance
+     */
+    public int getDistance() {
+        LOG.debug("getDistance()");
+        SampleProvider sampleProvider = getSensor().getDistanceMode();
+        float [] sample = new float[sampleProvider.sampleSize()];
+        sampleProvider.fetchSample(sample, 0);
+        return  (int)sample[0];
     }
 }

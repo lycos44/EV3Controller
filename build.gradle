@@ -9,6 +9,7 @@
 allprojects {
     apply plugin: 'idea'
     apply plugin: 'java'
+    apply plugin: 'distribution'
     group = 'de.munro'
     version = '01.00.01-SNAPSHOT'
 }
@@ -36,7 +37,7 @@ subprojects {
         // Use JUnit test framework
         testImplementation 'junit:junit:4.12'
 
-        compile("com.github.ev3dev-lang-java:ev3dev-lang-java:0.7.0")
+        compile("com.github.ev3dev-lang-java:ev3dev-lang-java:2.5.3")
         compile("com.github.ev3dev-lang-java:lejos-navigation:0.2.0")
     }
 }

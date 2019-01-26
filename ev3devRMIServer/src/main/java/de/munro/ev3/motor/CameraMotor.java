@@ -1,70 +1,123 @@
 package de.munro.ev3.motor;
 
 import de.munro.ev3.rmi.EV3devConstants;
-import ev3dev.actuators.lego.motors.EV3LargeRegulatedMotor;
-import lejos.utility.Delay;
+import de.munro.ev3.sensor.CameraSensor;
+import ev3dev.actuators.lego.motors.BaseRegulatedMotor;
+import ev3dev.actuators.lego.motors.EV3MediumRegulatedMotor;
+import lejos.hardware.port.Port;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class CameraMotor extends Motor {
     private static final Logger LOG = LoggerFactory.getLogger(CameraMotor.class);
+    private static final int MOTOR_SPEED = 800;
 
-    private static CameraMotor instance;
-    private EV3LargeRegulatedMotor motor;
+    private BaseRegulatedMotor motor;
 
-    private final int homePosition = 0;
     private int leftmostPosition = 0;
     private int rightmostPosition = 0;
+    private int homePosition = 0;
+    private CameraSensor cameraSensor;
 
-    public static CameraMotor getInstance() {
-        if (null == instance) {
-            instance = new CameraMotor();
-        }
-        return instance;
+    /**
+     * Constructor
+     * @param cameraSensor
+     */
+    public CameraMotor(CameraSensor cameraSensor) {
+        super(EV3devConstants.CAMERA_MOTOR_PORT, Polarity.NORMAL, MotorType.camera);
+        this.cameraSensor = cameraSensor;
+        this.motor = createMotor(EV3devConstants.CAMERA_MOTOR_PORT);
+        this.motor.setSpeed(MOTOR_SPEED);
     }
 
-    private CameraMotor() {
-        this.motor = createMotor(EV3devConstants.CAMERA_MOTOR_PORT, Polarity.INVERSED);
-        if (null == this.motor) {
-            this.motor = createMotor(EV3devConstants.CAMERA_MOTOR_PORT, Polarity.INVERSED);
-        }
-    }
-
-    public static boolean isInitialized() {
-        LOG.debug("motor {}", instance);
-        return null != instance && null != instance.motor;
-    }
-
+    /**
+     * @link Motor#createMotor()
+     */
     @Override
-    public EV3LargeRegulatedMotor getMotor() {
+    EV3MediumRegulatedMotor createMotor(Port port) {
+        try {
+            return new EV3MediumRegulatedMotor(port);
+        } catch (RuntimeException e) {
+            LOG.error("Catch", e);
+        }
+        return null;
+    }
+
+    /**
+     * @link Motor#getMotor()
+     */
+    @Override
+    BaseRegulatedMotor getMotor() {
         return motor;
     }
 
+    /**
+     * @link Motor#is2BeStopped()
+     */
+    @Override
+    boolean is2BeStopped() {
+        return false;
+    }
+
+    /**
+     * @link Motor#init()
+     */
     @Override
     public void init() {
         LOG.debug("init()");
-        backwardTillStalled();
-        getMotor().resetTachoCount();
-        int left = getMotor().getTachoCount();
-        LOG.debug("left: {}", left);
-        forwardTillStalled();
-        int right = getMotor().getTachoCount();
-        LOG.debug("right: {}", right);
-        int home = (left+right)/2;
-        leftmostPosition = home;
-        rightmostPosition = -home;
-        getMotor().rotateTo(home);
-        Delay.msDelay(1000);
-
-        getMotor().resetTachoCount();
+        // search for the position that can be set to zero
+        backward();
+        boolean cameraSensorIritated = isCameraSensorPressed();
+        while(!isCameraSensorPressed() || cameraSensorIritated) {
+            if (cameraSensorIritated) {
+                cameraSensorIritated = isCameraSensorPressed();
+            }
+        }
+        stop();
+        resetTachoCount();
+        forward();
+        cameraSensorIritated = isCameraSensorPressed();
+        while(!isCameraSensorPressed() || cameraSensorIritated) {
+            if (cameraSensorIritated) {
+                cameraSensorIritated = isCameraSensorPressed();
+            }
+        }
+        stop();
+        leftmostPosition = getTachoCount();
+        rightmostPosition = 0;
+        homePosition = leftmostPosition/2-100;
+        rotateTo(homePosition);
         LOG.debug("(left, home, right): ({}, {}, {})", leftmostPosition, homePosition, rightmostPosition);
     }
 
-    public int getLeftmostPosition() {
-        return leftmostPosition;
+    /**
+     * @link EV3TouchSensor#isPressed()
+     */
+    boolean isCameraSensorPressed() {
+        return cameraSensor.isPressed();
     }
 
-    public int getRightmostPosition() {
-        return  rightmostPosition;
+    /**
+     * turn the camera into the home position
+     */
+    public void goHome() {
+        LOG.debug("goHome()");
+        rotateTo(homePosition);
+    }
+
+    /**
+     * turn the camera into the leftmost position
+     */
+    public void goLeft() {
+        LOG.debug("goLeft()");
+        rotateTo(leftmostPosition);
+    }
+
+    /**
+     * turn the camera into the rightmost position
+     */
+    public void goRight() {
+        LOG.debug("goRight()");
+        rotateTo(rightmostPosition);
     }
 }

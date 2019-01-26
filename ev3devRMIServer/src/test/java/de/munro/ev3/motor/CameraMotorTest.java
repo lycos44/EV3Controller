@@ -1,42 +1,62 @@
 package de.munro.ev3.motor;
 
-import ev3dev.actuators.lego.motors.EV3LargeRegulatedMotor;
-import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.Mockito;
 
-import static org.hamcrest.Matchers.is;
-import static org.mockito.Mockito.mock;
-import static org.powermock.api.mockito.PowerMockito.when;
+import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertThat;
+import static org.mockito.Mockito.*;
 
-@PowerMockIgnore("javax.management.*")
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({CameraMotor.class})
 public class CameraMotorTest {
 
-    @Before
-    public void setup() {
+    @Test
+    public void is2BeStopped() {
+        CameraMotor cameraMotor = Mockito.mock(CameraMotor.class);
+        doCallRealMethod().when(cameraMotor).is2BeStopped();
+
+        assertThat(cameraMotor.is2BeStopped(), is(false));
     }
 
     @Test
-    public void init() throws Exception {
-        PowerMockito.mockStatic(CameraMotor.class);
-        CameraMotor cameraMotorMock = PowerMockito.mock(CameraMotor.class);
-        EV3LargeRegulatedMotor motorMock = mock(EV3LargeRegulatedMotor.class);
-        when(motorMock.getTachoCount()).thenReturn(0).thenReturn(240);
-        when(cameraMotorMock.getMotor()).thenReturn(motorMock);
-        PowerMockito.doCallRealMethod().when(cameraMotorMock, "init");
-        PowerMockito.doCallRealMethod().when(cameraMotorMock, "getLeftmostPosition");
-        PowerMockito.doCallRealMethod().when(cameraMotorMock, "getRightmostPosition");
+    public void init() {
+        CameraMotor cameraMotor = Mockito.mock(CameraMotor.class);
+        doCallRealMethod().when(cameraMotor).init();
+        when(cameraMotor.isCameraSensorPressed()).thenReturn(false).thenReturn(true).thenReturn(false).thenReturn(true);
 
-        cameraMotorMock.init();
+        cameraMotor.init();
 
-        Assert.assertThat(cameraMotorMock.getLeftmostPosition(),is(120));
-        Assert.assertThat(cameraMotorMock.getRightmostPosition(),is(-120));
+        verify(cameraMotor, times(2)).stop();
+        verify(cameraMotor).forward();
+        verify(cameraMotor).backward();
+    }
+
+    @Test
+    public void goHome() {
+        CameraMotor cameraMotor = Mockito.mock(CameraMotor.class);
+        doCallRealMethod().when(cameraMotor).goHome();
+
+        cameraMotor.goHome();
+
+        verify(cameraMotor).rotateTo(anyInt());
+    }
+
+    @Test
+    public void goLeft() {
+        CameraMotor cameraMotor = Mockito.mock(CameraMotor.class);
+        doCallRealMethod().when(cameraMotor).goLeft();
+
+        cameraMotor.goLeft();
+
+        verify(cameraMotor).rotateTo(anyInt());
+    }
+
+    @Test
+    public void goRight() {
+        CameraMotor cameraMotor = Mockito.mock(CameraMotor.class);
+        doCallRealMethod().when(cameraMotor).goRight();
+
+        cameraMotor.goRight();
+
+        verify(cameraMotor).rotateTo(anyInt());
     }
 }
