@@ -6,30 +6,31 @@ import ev3dev.actuators.lego.motors.EV3MediumRegulatedMotor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class SteeringMotor extends Motor {
-    private static final Logger LOG = LoggerFactory.getLogger(SteeringMotor.class);
-    private static final int MOTOR_SPEED = 200;
+public class ClimbFrontMotor extends Motor {
+    private static final Logger LOG = LoggerFactory.getLogger(ClimbFrontMotor.class);
+    private static final int MOTOR_SPEED_INITIAL = 100;
+    private static final int MOTOR_SPEED = 400;
+    public static final int TOLERANCE_POSITION = 15;
 
     private BaseRegulatedMotor motor;
 
-    private int leftmostPosition = 0;
-    private int rightmostPosition = 0;
     private int homePosition = 0;
+    private int climbPosition = 0;
 
     /**
      * Constructor
      */
-    public SteeringMotor() {
-        super(Polarity.NORMAL, MotorType.steering);
+    public ClimbFrontMotor() {
+        super(Polarity.INVERSED, MotorType.climbFront);
         int attempts = 0;
         do {
             this.motor = createMotor();
         } while (null == this.motor && attempts++<1);
-            if (null == this.motor) {
+        if (null == this.motor) {
             LOG.error("Initialisation of {} failed", this.getClass().getSimpleName());
             System.exit(EV3devConstants.SYSTEM_UNEXPECTED_ERROR);
         }
-        this.motor.setSpeed(MOTOR_SPEED);
+        this.motor.setSpeed(MOTOR_SPEED_INITIAL);
     }
 
     /**
@@ -40,7 +41,7 @@ public class SteeringMotor extends Motor {
         try {
             return new EV3MediumRegulatedMotor(this.getMotorType().getPort());
         } catch (RuntimeException e) {
-            LOG.error("Construct steering motor:", e);
+            LOG.error("Construct climbFront motor", e);
         }
         return null;
     }
@@ -67,14 +68,15 @@ public class SteeringMotor extends Motor {
     @Override
     public void init() {
         LOG.debug("init()");
-        // search for the position that can be set to zero
+        // search for the home position that can be set to the tolerance position
         rotateTillStopped(Direction.BACKWARD);
         resetTachoCount();
+        homePosition = TOLERANCE_POSITION;
         rotateTillStopped(Direction.FORWARD);
-        leftmostPosition = getTachoCount();
-        homePosition = leftmostPosition/2;
+        climbPosition = getTachoCount()-TOLERANCE_POSITION;
         rotateTo(homePosition);
-        LOG.debug("(left, home, right): ({}, {}, {})", leftmostPosition, homePosition, rightmostPosition);
+        LOG.debug("(home, climbFront): ({}, {})", homePosition, climbPosition);
+        setSpeed(MOTOR_SPEED);
     }
 
     /**
@@ -86,18 +88,10 @@ public class SteeringMotor extends Motor {
     }
 
     /**
-     * turn the climbFront into the leftmost position
+     * turn the climbFront into the home position
      */
-    public void goLeft() {
-        LOG.debug("goLeft()");
-        rotateTo(leftmostPosition);
-    }
-
-    /**
-     * turn the climbFront into the rightmost position
-     */
-    public void goRight() {
-        LOG.debug("goRight()");
-        rotateTo(rightmostPosition);
+    public void goClimb() {
+        LOG.debug("goClimb()");
+        rotateTo(climbPosition);
     }
 }

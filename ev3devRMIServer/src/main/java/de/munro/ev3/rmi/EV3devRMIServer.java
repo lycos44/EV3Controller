@@ -98,7 +98,7 @@ public class EV3devRMIServer extends UnicastRemoteObject implements RemoteEV3 {
 
     @Override
     public void climb() throws RemoteException {
-        LOG.debug("climb()");
+        LOG.debug("climbBack()");
     }
 
     @Override

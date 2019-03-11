@@ -1,6 +1,7 @@
 package de.munro.ev3.motor;
 
 import ev3dev.actuators.lego.motors.BaseRegulatedMotor;
+import lejos.hardware.port.MotorPort;
 import lejos.hardware.port.Port;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,13 +19,22 @@ public abstract class Motor {
         INVERSED
     }
     public enum MotorType {
-        camera,
-        climb,
-        drive,
-        steering
+        drive(MotorPort.A),
+        climbBack(MotorPort.B),
+        steering(MotorPort.C),
+        climbFront(MotorPort.D);
+
+        private final Port port;
+
+        MotorType(Port port) {
+            this.port = port;
+        }
+
+        public Port getPort() {
+            return port;
+        }
     }
 
-    private final Port port;
     private final Polarity polarity;
     private final MotorType motorType;
     private Direction directionStalled = Direction.NOT_SET;
@@ -32,8 +42,7 @@ public abstract class Motor {
     /**
      * Constructor
      */
-    public Motor(Port port, Polarity polarity, MotorType motorType) {
-        this.port = port;
+    public Motor(Polarity polarity, MotorType motorType) {
         this.polarity = polarity;
         this.motorType = motorType;
     }
@@ -55,16 +64,16 @@ public abstract class Motor {
     }
 
     /**
+     * @link BaseRegulatedMotor#setSpeed()
+     */
+    public void setSpeed(int speed) {
+        getMotor().setSpeed(speed);
+    }
+
+    /**
      * @return motor
      */
     abstract BaseRegulatedMotor getMotor();
-
-    /**
-     * @return port
-     */
-    public Port getPort() {
-        return port;
-    }
 
     /**
      * @return polarity
@@ -109,10 +118,9 @@ public abstract class Motor {
 
     /**
      * create a new motor instance
-     * @param port motor connected to
      * @return EV3MediumRegulatedMotor
      */
-    abstract BaseRegulatedMotor createMotor(Port port);
+    abstract BaseRegulatedMotor createMotor();
 
     /**
      * calls {@link BaseRegulatedMotor#backward()} or {@link BaseRegulatedMotor#forward()}

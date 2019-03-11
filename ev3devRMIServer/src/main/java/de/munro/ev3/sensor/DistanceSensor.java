@@ -31,7 +31,6 @@ public class DistanceSensor extends Sensor {
      * @return distance
      */
     public int getDistance() {
-        LOG.debug("getDistance()");
         SampleProvider sampleProvider = getSensor().getDistanceMode();
         float [] sample = new float[sampleProvider.sampleSize()];
         sampleProvider.fetchSample(sample, 0);
