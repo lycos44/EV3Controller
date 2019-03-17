@@ -1,26 +1,33 @@
 package de.munro.ev3.motor;
 
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.contrib.java.lang.system.ExpectedSystemExit;
 import org.mockito.Mockito;
 
-import static org.hamcrest.core.Is.is;
+import static de.munro.ev3.rmi.EV3devConstants.SYSTEM_UNEXPECTED_ERROR;
+import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.*;
 
 public class ClimbFrontMotorTest {
+    @Rule
+    public final ExpectedSystemExit exit = ExpectedSystemExit.none();
 
     @Test
     public void init() {
         ClimbFrontMotor climbFrontMotor = Mockito.mock(ClimbFrontMotor.class);
+        exit.expectSystemExitWithStatus(SYSTEM_UNEXPECTED_ERROR);
+        exit.checkAssertionAfterwards(() -> {
+            verify(climbFrontMotor, times(2)).rotateTillStopped(Motor.Direction.BACKWARD);
+            verify(climbFrontMotor, times(2)).resetTachoCount();
+            verify(climbFrontMotor, times(2)).rotateTillStopped(Motor.Direction.FORWARD);
+            verify(climbFrontMotor, times(2)).rotateTo(ClimbFrontMotor.TOLERANCE_POSITION);
+        });
         doCallRealMethod().when(climbFrontMotor).init();
         when(climbFrontMotor.isStalled()).thenReturn(false).thenReturn(true).thenReturn(false).thenReturn(true);
 
         climbFrontMotor.init();
-
-        verify(climbFrontMotor).rotateTillStopped(Motor.Direction.BACKWARD);
-        verify(climbFrontMotor).resetTachoCount();
-        verify(climbFrontMotor).rotateTillStopped(Motor.Direction.FORWARD);
-        verify(climbFrontMotor).rotateTo(ClimbFrontMotor.TOLERANCE_POSITION);
     }
 
     @Test
@@ -45,12 +52,12 @@ public class ClimbFrontMotorTest {
 
     @Test
     public void is2BeStopped() {
-        SteeringMotor steeringMotor = Mockito.mock(SteeringMotor.class);
-        doCallRealMethod().when(steeringMotor).is2BeStopped();
-        when(steeringMotor.isStalled()).thenReturn(true);
+        ClimbFrontMotor climbFrontMotor = Mockito.mock(ClimbFrontMotor.class);
+        doCallRealMethod().when(climbFrontMotor).is2BeStopped();
+        when(climbFrontMotor.isStalled()).thenReturn(true);
 
-        assertThat(steeringMotor.is2BeStopped(), is(true));
+        assertThat(climbFrontMotor.is2BeStopped(), is(true));
 
-        verify(steeringMotor).isStalled();
+        verify(climbFrontMotor).isStalled();
     }
 }

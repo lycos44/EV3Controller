@@ -10,6 +10,7 @@ public class ClimbFrontMotor extends Motor {
     private static final Logger LOG = LoggerFactory.getLogger(ClimbFrontMotor.class);
     private static final int MOTOR_SPEED_INITIAL = 100;
     private static final int MOTOR_SPEED = 400;
+    private static final int MINIMUM_POSITION_DIFFERENCE = 100;
     public static final int TOLERANCE_POSITION = 15;
 
     private BaseRegulatedMotor motor;
@@ -67,15 +68,22 @@ public class ClimbFrontMotor extends Motor {
      */
     @Override
     public void init() {
-        LOG.debug("init()");
-        // search for the home position that can be set to the tolerance position
-        rotateTillStopped(Direction.BACKWARD);
-        resetTachoCount();
-        homePosition = TOLERANCE_POSITION;
-        rotateTillStopped(Direction.FORWARD);
-        climbPosition = getTachoCount()-TOLERANCE_POSITION;
-        rotateTo(homePosition);
-        LOG.debug("(home, climbFront): ({}, {})", homePosition, climbPosition);
+        int attempts = 0;
+        do {
+            LOG.debug("init({})", attempts);
+            // search for the home position that can be set to the tolerance position
+            rotateTillStopped(Direction.BACKWARD);
+            resetTachoCount();
+            homePosition = TOLERANCE_POSITION;
+            rotateTillStopped(Direction.FORWARD);
+            climbPosition = getTachoCount()-TOLERANCE_POSITION;
+            rotateTo(homePosition);
+        } while (climbPosition < MINIMUM_POSITION_DIFFERENCE && attempts++<1);
+        if (climbPosition < MINIMUM_POSITION_DIFFERENCE) {
+            LOG.error("Failed to move to starting positions: {}", this.getClass().getSimpleName());
+            System.exit(EV3devConstants.SYSTEM_UNEXPECTED_ERROR);
+        }
+        LOG.debug("(home, climbBack): ({}, {})", homePosition, climbPosition);
         setSpeed(MOTOR_SPEED);
     }
 
