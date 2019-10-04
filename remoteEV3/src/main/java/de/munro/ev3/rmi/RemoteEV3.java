@@ -12,6 +12,10 @@ public interface RemoteEV3 extends Remote
     void forward() throws RemoteException;
     void backward() throws RemoteException;
     void stop() throws RemoteException;
+    void left() throws RemoteException;
+    void right() throws RemoteException;
+    void straight() throws RemoteException;
+
     void climb() throws RemoteException;
     void shutdown() throws RemoteException;
 }

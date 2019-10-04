@@ -27,9 +27,9 @@ public class SteeringMotorTest {
     @Test
     public void goHome() {
         SteeringMotor steeringMotor = Mockito.mock(SteeringMotor.class);
-        doCallRealMethod().when(steeringMotor).goHome();
+        doCallRealMethod().when(steeringMotor).goStraight();
 
-        steeringMotor.goHome();
+        steeringMotor.goStraight();
 
         verify(steeringMotor).rotateTo(anyInt());
     }

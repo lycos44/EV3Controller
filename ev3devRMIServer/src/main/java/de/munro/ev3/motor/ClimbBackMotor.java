@@ -11,6 +11,7 @@ public class ClimbBackMotor extends Motor {
     private static final int MOTOR_SPEED_INITIAL = 30;
     private static final int MOTOR_SPEED = 150;
     private static final int MINIMUM_POSITION_DIFFERENCE = 100;
+    private static final int MOTOR_POSITION_BUFFER = 40;
 
     private BaseRegulatedMotor motor;
 
@@ -73,9 +74,9 @@ public class ClimbBackMotor extends Motor {
             // search for the home position that can be set to the tolerance position
             rotateTillStopped(Direction.BACKWARD);
             resetTachoCount();
-            homePosition = 0;
             rotateTillStopped(Direction.FORWARD);
             climbPosition = getTachoCount();
+            homePosition = MOTOR_POSITION_BUFFER;
             rotateTo(homePosition);
         } while (climbPosition < MINIMUM_POSITION_DIFFERENCE && attempts++<1);
         if (climbPosition < MINIMUM_POSITION_DIFFERENCE) {

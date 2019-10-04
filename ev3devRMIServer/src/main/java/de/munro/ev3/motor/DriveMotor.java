@@ -62,5 +62,6 @@ public class DriveMotor extends Motor {
      */
     @Override
     public void init() {
+        LOG.debug("init()");
     }
 }

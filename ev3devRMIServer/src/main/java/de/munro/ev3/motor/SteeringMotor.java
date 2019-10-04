@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 public class SteeringMotor extends Motor {
     private static final Logger LOG = LoggerFactory.getLogger(SteeringMotor.class);
     private static final int MOTOR_SPEED = 200;
+    private static final int MOTOR_POSITION_BUFFER = 10;
 
     private BaseRegulatedMotor motor;
 
@@ -74,14 +75,17 @@ public class SteeringMotor extends Motor {
         leftmostPosition = getTachoCount();
         homePosition = leftmostPosition/2;
         rotateTo(homePosition);
+        // adjust positions
+        leftmostPosition -= MOTOR_POSITION_BUFFER;
+        rightmostPosition = MOTOR_POSITION_BUFFER;
         LOG.debug("(left, home, right): ({}, {}, {})", leftmostPosition, homePosition, rightmostPosition);
     }
 
     /**
      * turn the climbFront into the home position
      */
-    public void goHome() {
-        LOG.debug("goHome()");
+    public void goStraight() {
+        LOG.debug("goStraight()");
         rotateTo(homePosition);
     }
 

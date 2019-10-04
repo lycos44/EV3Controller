@@ -22,7 +22,7 @@ public class ClimbFrontMotorTest {
             verify(climbFrontMotor, times(2)).rotateTillStopped(Motor.Direction.BACKWARD);
             verify(climbFrontMotor, times(2)).resetTachoCount();
             verify(climbFrontMotor, times(2)).rotateTillStopped(Motor.Direction.FORWARD);
-            verify(climbFrontMotor, times(2)).rotateTo(ClimbFrontMotor.TOLERANCE_POSITION);
+            verify(climbFrontMotor, times(2)).rotateTo(20);
         });
         doCallRealMethod().when(climbFrontMotor).init();
         when(climbFrontMotor.isStalled()).thenReturn(false).thenReturn(true).thenReturn(false).thenReturn(true);

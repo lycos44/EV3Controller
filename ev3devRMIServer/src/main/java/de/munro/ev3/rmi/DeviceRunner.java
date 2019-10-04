@@ -8,12 +8,11 @@ import de.munro.ev3.sensor.BackwardSensor;
 import de.munro.ev3.sensor.ColorSensor;
 import de.munro.ev3.sensor.DistanceSensor;
 import de.munro.ev3.sensor.GyroSensor;
-import ev3dev.sensors.Battery;
 import lejos.utility.Delay;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class DeviceRunner {
+class DeviceRunner {
     private static final Logger LOG = LoggerFactory.getLogger(DeviceRunner.class);
 
     private BackwardSensor backwardSensor;
@@ -26,7 +25,7 @@ public class DeviceRunner {
     private SteeringMotor steeringMotor;
     private ClimbFrontMotor climbFrontMotor;
 
-    public DeviceRunner() {
+    DeviceRunner() {
         this.backwardSensor = new BackwardSensor();
         this.gyroSensor = new GyroSensor();
         this.colorSensor = new ColorSensor();
@@ -38,33 +37,50 @@ public class DeviceRunner {
         this.climbFrontMotor = new ClimbFrontMotor();
     }
 
-    public void stop() {
+    void stop() {
         this.driveMotor.stop();
         this.climbBackMotor.stop();
         this.steeringMotor.stop();
         this.climbFrontMotor.stop();
     }
 
-    public void run() {
-        LOG.info("start running()");
+    void run(EV3devRMIServer ev3devRMIServer) {
+        LOG.info("initialize all motor devices");
 
-        int distance = 255;
-
-        final int distance_threshold = 25;
-
+        // initialize motors
+        driveMotor.init();
         steeringMotor.init();
         climbFrontMotor.init();
         climbBackMotor.init();
+
         //Robot control loop
-        final int iteration_threshold = 100;
-        for(int i = 0; i <= iteration_threshold; i++) {
-            driveMotor.backward();
+        LOG.info("start running()");
+        EV3devStatus.Moving currentlyMoving = EV3devStatus.Moving.stop;
+        EV3devStatus.Direction currentDirection = EV3devStatus.Direction.straight;
+        while (true) {
+            // the show is over?
+            if (ev3devRMIServer.getEv3devStatus().isToBeStopped()) {
+                LOG.info("needs to be stopped: {}", ev3devRMIServer.getEv3devStatus().isToBeStopped());
+                break;
+            }
 
             if (backwardSensor.isPressed()) {
                 LOG.debug("*********** Backward touch ***********");
-                backwardWithClimb();
+//                backwardWithClimb();
             }
-////            driveMotor.forward();
+
+            // moving has changed?
+            if (currentlyMoving != ev3devRMIServer.getEv3devStatus().getMoving()) {
+                LOG.info("next to do: {}", ev3devRMIServer.getEv3devStatus().getMoving());
+                currentlyMoving = doMoving(ev3devRMIServer.getEv3devStatus().getMoving());
+            }
+
+            // direction has changed?
+            if (currentDirection != ev3devRMIServer.getEv3devStatus().getDirection()) {
+                LOG.info("next to do: {}", ev3devRMIServer.getEv3devStatus().getDirection());
+                currentDirection = doDirection(ev3devRMIServer.getEv3devStatus().getDirection());
+            }
+
 //
 ////            if(distanceSensor.getDistance() <= distance_threshold) {
 ////                LOG.debug("Detected obstacle");
@@ -80,14 +96,45 @@ public class DeviceRunner {
 //                backwardWithTurn();
 //            }
 
-            LOG.debug("Iteration: " + i);
-            LOG.debug("Battery: " + Battery.getInstance().getVoltage());
-            LOG.debug("Distance: " + distance);
+//            LOG.debug("Iteration: " + i);
+//            LOG.debug("Battery: " + Battery.getInstance().getVoltage());
+//            LOG.debug("Distance: " + distance);
 //            if (i % 5 == 0) {
 //                LOG.debug("Angle/Rate: {}", gyroSensor.getGyroAngleRate());
 //            }
             LOG.debug("");
+            Delay.msDelay(2000);
         }
+    }
+
+    private EV3devStatus.Direction doDirection(EV3devStatus.Direction direction) {
+        switch (direction) {
+            case left:
+                steeringMotor.goLeft();
+                break;
+            case right:
+                steeringMotor.goRight();
+                break;
+            case straight:
+                steeringMotor.goStraight();
+                break;
+        }
+        return direction;
+    }
+
+    private EV3devStatus.Moving doMoving(EV3devStatus.Moving moving) {
+        switch (moving) {
+            case forward:
+                driveMotor.forward();
+                break;
+            case backward:
+                driveMotor.backward();
+                break;
+            case stop:
+                driveMotor.stop();
+                break;
+        }
+        return moving;
     }
 
     private void backwardWithTurn() {
@@ -100,7 +147,7 @@ public class DeviceRunner {
         driveMotor.forward();
         Delay.msDelay(4000);
         driveMotor.stop();
-        steeringMotor.goHome();
+        steeringMotor.goStraight();
     }
 
     private void backwardWithClimb() {

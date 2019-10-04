@@ -22,12 +22,14 @@ public class ClimbBackMotorTest {
             verify(climbBackMotor, times(2)).rotateTillStopped(Motor.Direction.BACKWARD);
             verify(climbBackMotor, times(2)).resetTachoCount();
             verify(climbBackMotor, times(2)).rotateTillStopped(Motor.Direction.FORWARD);
-            verify(climbBackMotor, times(2)).rotateTo(0);
+            verify(climbBackMotor, times(2)).rotateTo(40);
         });
         doCallRealMethod().when(climbBackMotor).init();
         when(climbBackMotor.isStalled()).thenReturn(false).thenReturn(true).thenReturn(false).thenReturn(true);
 
         climbBackMotor.init();
+
+        assertThat(climbBackMotor.getSpeed(), is(150));
     }
 
     @Test
