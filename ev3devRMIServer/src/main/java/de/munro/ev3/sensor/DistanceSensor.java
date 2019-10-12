@@ -34,6 +34,12 @@ public class DistanceSensor extends Sensor {
         SampleProvider sampleProvider = getSensor().getDistanceMode();
         float [] sample = new float[sampleProvider.sampleSize()];
         sampleProvider.fetchSample(sample, 0);
+        // minimum distance 0, enough to avoid crash
         return  (int)sample[0];
+    }
+
+    @Override
+    public String toString() {
+        return Integer.toString(getDistance());
     }
 }

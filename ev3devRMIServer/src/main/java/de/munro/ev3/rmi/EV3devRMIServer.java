@@ -96,43 +96,61 @@ public class EV3devRMIServer extends UnicastRemoteObject implements RemoteEV3 {
     @Override
     public void forward() {
         LOG.debug("forward()");
-        this.getEv3devStatus().setMoving(EV3devStatus.Moving.forward);
+        this.getEv3devStatus().setDirection(EV3devStatus.Direction.forward);
     }
 
     @Override
     public void backward() {
         LOG.debug("backward()");
-        this.getEv3devStatus().setMoving(EV3devStatus.Moving.backward);
+        this.getEv3devStatus().setDirection(EV3devStatus.Direction.backward);
     }
 
     @Override
     public void stop() {
         LOG.debug("stop()");
-        this.getEv3devStatus().setMoving(EV3devStatus.Moving.stop);
+        this.getEv3devStatus().setDirection(EV3devStatus.Direction.stop);
     }
 
     @Override
     public void left() {
         LOG.debug("left()");
-        this.getEv3devStatus().setDirection(EV3devStatus.Direction.left);
+        this.getEv3devStatus().setTurn(EV3devStatus.Turn.left);
     }
 
     @Override
     public void right() {
         LOG.debug("right()");
-        this.getEv3devStatus().setDirection(EV3devStatus.Direction.right);
+        this.getEv3devStatus().setTurn(EV3devStatus.Turn.right);
     }
 
     @Override
     public void straight() {
         LOG.debug("straight()");
-        this.getEv3devStatus().setDirection(EV3devStatus.Direction.straight);
+        this.getEv3devStatus().setTurn(EV3devStatus.Turn.straight);
     }
 
     @Override
-    public void climb() {
-        LOG.debug("climb()");
-//        this.getEv3devStatus().setEv3devAction(Ev3devAction.climb);
+    public void frontup() {
+        LOG.debug("frontup()");
+        this.getEv3devStatus().setFront(EV3devStatus.Climb.up);
+    }
+
+    @Override
+    public void frontdown() {
+        LOG.debug("frontdown()");
+        this.getEv3devStatus().setFront(EV3devStatus.Climb.down);
+    }
+
+    @Override
+    public void backup() {
+        LOG.debug("backup()");
+        this.getEv3devStatus().setBack(EV3devStatus.Climb.up);
+    }
+
+    @Override
+    public void backdown() {
+        LOG.debug("backdown()");
+        this.getEv3devStatus().setBack(EV3devStatus.Climb.down);
     }
 
     @Override

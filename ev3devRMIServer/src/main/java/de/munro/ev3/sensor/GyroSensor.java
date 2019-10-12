@@ -37,4 +37,9 @@ public class GyroSensor extends Sensor {
         sampleProvider.fetchSample(sample, 0);
         return  (int)sample[0];
     }
+
+    @Override
+    public String toString() {
+        return Integer.toString(getGyroAngleRate());
+    }
 }

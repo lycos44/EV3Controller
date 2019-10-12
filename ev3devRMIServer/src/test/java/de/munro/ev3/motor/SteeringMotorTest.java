@@ -18,9 +18,9 @@ public class SteeringMotorTest {
 
         steeringMotor.init();
 
-        verify(steeringMotor).rotateTillStopped(Motor.Direction.BACKWARD);
+        verify(steeringMotor).rotateTillStopped(Motor.Rotation.reverse);
         verify(steeringMotor).resetTachoCount();
-        verify(steeringMotor).rotateTillStopped(Motor.Direction.FORWARD);
+        verify(steeringMotor).rotateTillStopped(Motor.Rotation.ahead);
         verify(steeringMotor).rotateTo(0);
     }
 

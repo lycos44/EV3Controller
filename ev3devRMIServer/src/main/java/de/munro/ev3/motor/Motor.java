@@ -9,10 +9,10 @@ import org.slf4j.LoggerFactory;
 public abstract class Motor {
     private static final Logger LOG = LoggerFactory.getLogger(Motor.class);
 
-    public enum Direction {
-        FORWARD,
-        BACKWARD,
-        NOT_SET
+    public enum Rotation {
+        ahead,
+        reverse,
+        stalled
     }
     public enum Polarity {
         NORMAL,
@@ -37,7 +37,8 @@ public abstract class Motor {
 
     private final Polarity polarity;
     private final MotorType motorType;
-    private Direction directionStalled = Direction.NOT_SET;
+    private Rotation rotationStalled = Rotation.stalled;
+    private int relativeSpeed;
 
     /**
      * Constructor
@@ -45,6 +46,22 @@ public abstract class Motor {
     public Motor(Polarity polarity, MotorType motorType) {
         this.polarity = polarity;
         this.motorType = motorType;
+    }
+
+    /**
+     * get relativeSpeed value
+     * @return relativeSpeed
+     */
+    public int getRelativeSpeed() {
+        return relativeSpeed;
+    }
+
+    /**
+     * set value fo relativeSpeed
+     * @param relativeSpeed
+     */
+    public void setRelativeSpeed(int relativeSpeed) {
+        this.relativeSpeed = relativeSpeed;
     }
 
     /**
@@ -92,15 +109,15 @@ public abstract class Motor {
     /**
      * @return motorType
      */
-    public Direction getDirectionStalled() {
-        return directionStalled;
+    public Rotation getRotationStalled() {
+        return rotationStalled;
     }
 
     /**
-     * @param directionStalled
+     * @param rotationStalled
      */
-    public void setDirectionStalled(Direction directionStalled) {
-        this.directionStalled = directionStalled;
+    public void setRotationStalled(Rotation rotationStalled) {
+        this.rotationStalled = rotationStalled;
     }
 
     /**
@@ -128,7 +145,7 @@ public abstract class Motor {
      */
     public void forward() {
         LOG.debug("forward.polarity: {}", getPolarity());
-        setDirectionStalled(Direction.NOT_SET);
+        setRotationStalled(Rotation.stalled);
         switch (getPolarity()) {
             case NORMAL:
                 LOG.debug("getMotor().forward()");
@@ -160,23 +177,23 @@ public abstract class Motor {
     }
 
     /**
-     * rotate in direction until the call of is2BeStopped provides true
-     * @param direction
+     * rotate until the call of is2BeStopped provides true
+     * @param rotation
      */
-    public void rotateTillStopped(Direction direction) {
+    public void rotateTillStopped(Rotation rotation) {
         LOG.debug("rotateTillStopped()");
-        if (getDirectionStalled().equals(direction)) {
+        if (getRotationStalled().equals(rotation)) {
             LOG.debug("Tried to rotate in stalled direction");
             return;
         }
-        switch (direction) {
-            case FORWARD: forward();
+        switch (rotation) {
+            case ahead: forward();
             break;
-            case BACKWARD: backward();
+            case reverse: backward();
         }
         while(!is2BeStopped()) {
         }
-        setDirectionStalled(direction);
+        setRotationStalled(rotation);
         stop();
     }
 

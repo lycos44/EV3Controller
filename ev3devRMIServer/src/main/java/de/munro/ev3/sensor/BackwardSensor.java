@@ -31,4 +31,9 @@ public class BackwardSensor extends Sensor {
     public boolean isPressed() {
         return getSensor().isPressed();
     }
+
+    @Override
+    public String toString() {
+        return Boolean.toString(isPressed());
+    }
 }

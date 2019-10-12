@@ -41,7 +41,7 @@ public class SteeringMotor extends Motor {
         try {
             return new EV3MediumRegulatedMotor(this.getMotorType().getPort());
         } catch (RuntimeException e) {
-            LOG.error("Construct steering motor:", e);
+            LOG.error("Construct steering motor: ", e);
         }
         return null;
     }
@@ -69,9 +69,9 @@ public class SteeringMotor extends Motor {
     public void init() {
         LOG.debug("init()");
         // search for the position that can be set to zero
-        rotateTillStopped(Direction.BACKWARD);
+        rotateTillStopped(Rotation.reverse);
         resetTachoCount();
-        rotateTillStopped(Direction.FORWARD);
+        rotateTillStopped(Rotation.ahead);
         leftmostPosition = getTachoCount();
         homePosition = leftmostPosition/2;
         rotateTo(homePosition);

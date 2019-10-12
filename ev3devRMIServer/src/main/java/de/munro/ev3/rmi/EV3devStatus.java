@@ -2,22 +2,29 @@ package de.munro.ev3.rmi;
 
 public class EV3devStatus {
 
-    public enum Direction {
+    public enum Turn {
         left,
         right,
         straight,
     }
 
-    public enum Moving {
+    public enum Direction {
         forward,
         backward,
         stop,
     }
 
+    public enum Climb {
+        up,
+        down
+    }
+
     private boolean toBeStopped = false;
     private DeviceRunner deviceRunner;
-    private Direction direction = Direction.straight;
-    private Moving moving = Moving.stop;
+    private Turn turn = Turn.straight;
+    private Direction direction = Direction.stop;
+    private Climb front = Climb.up;
+    private Climb back = Climb.up;
 
     /**
      * returns flag to stop processing
@@ -44,10 +51,26 @@ public class EV3devStatus {
     }
 
     /**
-     * get the value of direction
-     * @return direction, current value
+     * get the value of turn
+     * @return turn, current value
      */
-    public Direction getDirection() {
+    public Turn getTurn() {
+        return turn;
+    }
+
+    /**
+     * set the value of turn
+     * @param turn, value to be assigned
+     */
+    public void setTurn(Turn turn) {
+        this.turn = turn;
+    }
+
+    /**
+     * get the value of direction
+     * @return direction
+     */
+    Direction getDirection() {
         return direction;
     }
 
@@ -55,23 +78,51 @@ public class EV3devStatus {
      * set the value of direction
      * @param direction, value to be assigned
      */
-    public void setDirection(Direction direction) {
+    void setDirection(Direction direction) {
         this.direction = direction;
     }
 
     /**
-     * get the value of moving
-     * @return moving
+     * get the value of front
+     * @return front
      */
-    Moving getMoving() {
-        return moving;
+    public Climb getFront() {
+        return front;
     }
 
     /**
-     * set the value of moving
-     * @param moving, value to be assigned
+     * set the value of front
+     * @param front, value to be assigned
      */
-    void setMoving(Moving moving) {
-        this.moving = moving;
+    public void setFront(Climb front) {
+        this.front = front;
+    }
+
+    /**
+     * get the value of back
+     * @return back
+     */
+    public Climb getBack() {
+        return back;
+    }
+
+    /**
+     * set the value of
+     * @param back, value to be assigned
+     */
+    public void setBack(Climb back) {
+        this.back = back;
+    }
+
+    @Override
+    public String toString() {
+        StringBuffer sb = new StringBuffer();
+        sb.append(toBeStopped).append(", ");
+        sb.append(direction).append(", ");
+        sb.append(turn).append(", ");
+        sb.append(front).append(", ");
+        sb.append(back);
+
+        return sb.toString();
     }
 }

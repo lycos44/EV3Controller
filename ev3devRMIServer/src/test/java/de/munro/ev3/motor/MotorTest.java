@@ -94,14 +94,14 @@ public class MotorTest {
     public void rotateTillStopped() {
         Motor motor = Mockito.mock(Motor.class);
         doCallRealMethod().when(motor).rotateTillStopped(any());
-        doCallRealMethod().when(motor).setDirectionStalled(any());
-        doCallRealMethod().when(motor).getDirectionStalled();
+        doCallRealMethod().when(motor).setRotationStalled(any());
+        doCallRealMethod().when(motor).getRotationStalled();
         when(motor.is2BeStopped()).thenReturn(false).thenReturn(false).thenReturn(true);
-        motor.setDirectionStalled(Motor.Direction.NOT_SET);
+        motor.setRotationStalled(Motor.Rotation.stalled);
 
-        motor.rotateTillStopped(Motor.Direction.FORWARD);
+        motor.rotateTillStopped(Motor.Rotation.ahead);
 
-        assertThat(motor.getDirectionStalled(), is(Motor.Direction.FORWARD));
+        assertThat(motor.getRotationStalled(), is(Motor.Rotation.ahead));
         verify(motor).forward();
         verify(motor, times(3)).is2BeStopped();
     }

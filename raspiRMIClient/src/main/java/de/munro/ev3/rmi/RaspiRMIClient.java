@@ -84,14 +84,28 @@ public class RaspiRMIClient {
                         System.out.println("straight");
                         remoteEV3.straight();
                         break;
-                    case "climb":
-                        System.out.println("climb");
-                        remoteEV3.climb();
+                    case "frontup":
+                        System.out.println("frontup");
+                        remoteEV3.frontup();
+                        break;
+                    case "frontdown":
+                        System.out.println("frontdown");
+                        remoteEV3.frontdown();
+                        break;
+                    case "backup":
+                        System.out.println("backup");
+                        remoteEV3.backup();
+                        break;
+                    case "backdown":
+                        System.out.println("backdown");
+                        remoteEV3.backdown();
                         break;
                     case "shutdown":
                         System.out.println("Exit!");
                         remoteEV3.shutdown();
                         break input;
+                    default:
+                        System.out.println("unknown command!");
                 }
             } catch (RemoteException e) {
                 e.printStackTrace();

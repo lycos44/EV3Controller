@@ -5,7 +5,6 @@ import org.junit.Test;
 import org.junit.contrib.java.lang.system.ExpectedSystemExit;
 import org.mockito.Mockito;
 
-import static de.munro.ev3.rmi.EV3devConstants.SYSTEM_UNEXPECTED_ERROR;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.*;
@@ -17,35 +16,33 @@ public class ClimbFrontMotorTest {
     @Test
     public void init() {
         ClimbFrontMotor climbFrontMotor = Mockito.mock(ClimbFrontMotor.class);
-        exit.expectSystemExitWithStatus(SYSTEM_UNEXPECTED_ERROR);
         exit.checkAssertionAfterwards(() -> {
-            verify(climbFrontMotor, times(2)).rotateTillStopped(Motor.Direction.BACKWARD);
-            verify(climbFrontMotor, times(2)).resetTachoCount();
-            verify(climbFrontMotor, times(2)).rotateTillStopped(Motor.Direction.FORWARD);
-            verify(climbFrontMotor, times(2)).rotateTo(20);
+            verify(climbFrontMotor, times(1)).rotateTillStopped(Motor.Rotation.reverse);
+            verify(climbFrontMotor, times(1)).resetTachoCount();
+//            verify(climbFrontMotor, times(1)).rotateTo(20);
+            verify(climbFrontMotor, times(1)).setSpeed(400);
         });
         doCallRealMethod().when(climbFrontMotor).init();
-        when(climbFrontMotor.isStalled()).thenReturn(false).thenReturn(true).thenReturn(false).thenReturn(true);
 
         climbFrontMotor.init();
     }
 
     @Test
-    public void goHome() {
+    public void goUp() {
         ClimbFrontMotor climbFrontMotor = Mockito.mock(ClimbFrontMotor.class);
-        doCallRealMethod().when(climbFrontMotor).goHome();
+        doCallRealMethod().when(climbFrontMotor).goUp();
 
-        climbFrontMotor.goHome();
+        climbFrontMotor.goUp();
 
         verify(climbFrontMotor).rotateTo(anyInt());
     }
 
     @Test
-    public void goClimb() {
+    public void goDown() {
         ClimbFrontMotor climbFrontMotor = Mockito.mock(ClimbFrontMotor.class);
-        doCallRealMethod().when(climbFrontMotor).goClimb();
+        doCallRealMethod().when(climbFrontMotor).goDown();
 
-        climbFrontMotor.goClimb();
+        climbFrontMotor.goDown();
 
         verify(climbFrontMotor).rotateTo(anyInt());
     }

@@ -8,7 +8,8 @@ import org.slf4j.LoggerFactory;
 
 public class DriveMotor extends Motor {
     private static final Logger LOG = LoggerFactory.getLogger(DriveMotor.class);
-    private static final int MOTOR_SPEED = 300;
+    public static final int MOTOR_SPEED_NORMAL = 300;
+    public static final int MOTOR_SPEED_SLOW = 100;
 
     private BaseRegulatedMotor motor;
 
@@ -25,7 +26,7 @@ public class DriveMotor extends Motor {
             LOG.error("Initialisation of {} failed", this.getClass().getSimpleName());
             System.exit(EV3devConstants.SYSTEM_UNEXPECTED_ERROR);
         }
-        this.motor.setSpeed(MOTOR_SPEED);
+        this.motor.setSpeed(MOTOR_SPEED_NORMAL);
     }
 
     /**
@@ -63,5 +64,14 @@ public class DriveMotor extends Motor {
     @Override
     public void init() {
         LOG.debug("init()");
+    }
+
+    /**
+     * @link Motor#stop()
+     */
+    @Override
+    public void stop() {
+        super.stop();
+        getMotor().setSpeed(MOTOR_SPEED_NORMAL);
     }
 }

@@ -11,12 +11,10 @@ public class ClimbBackMotor extends Motor {
     private static final int MOTOR_SPEED_INITIAL = 30;
     private static final int MOTOR_SPEED = 150;
     private static final int MINIMUM_POSITION_DIFFERENCE = 100;
-    private static final int MOTOR_POSITION_BUFFER = 40;
+    private static final int MOTOR_INITIAL_UP_POSITION = 40;
+    private static final int MOTOR_INITIAL_DOWN_POSITION = 450;
 
     private BaseRegulatedMotor motor;
-
-    private int homePosition = 0;
-    private int climbPosition = 0;
 
     /**
      * Constructor
@@ -68,38 +66,30 @@ public class ClimbBackMotor extends Motor {
      */
     @Override
     public void init() {
-        int attempts = 0;
-        do {
-            LOG.debug("init({})", attempts);
-            // search for the home position that can be set to the tolerance position
-            rotateTillStopped(Direction.BACKWARD);
-            resetTachoCount();
-            rotateTillStopped(Direction.FORWARD);
-            climbPosition = getTachoCount();
-            homePosition = MOTOR_POSITION_BUFFER;
-            rotateTo(homePosition);
-        } while (climbPosition < MINIMUM_POSITION_DIFFERENCE && attempts++<1);
-        if (climbPosition < MINIMUM_POSITION_DIFFERENCE) {
-            LOG.error("Failed to move to starting positions: {}", this.getClass().getSimpleName());
-            System.exit(EV3devConstants.SYSTEM_UNEXPECTED_ERROR);
-        }
-        LOG.debug("(home, climbBack): ({}, {})", homePosition, climbPosition);
+        LOG.debug("init()");
+        // search for the home position that can be set to the tolerance position
+        rotateTillStopped(Rotation.reverse);
+        resetTachoCount();
+        rotateTillStopped(Rotation.ahead);
+        rotateTo(MOTOR_INITIAL_UP_POSITION);
+
+        LOG.debug("(up, down): ({}, {})", MOTOR_INITIAL_UP_POSITION, MOTOR_INITIAL_DOWN_POSITION);
         setSpeed(MOTOR_SPEED);
     }
 
     /**
-     * turn the climbFront into the home position
+     * turn the climbFront into the up position
      */
-    public void goHome() {
-        LOG.debug("goHome()");
-        rotateTo(homePosition);
+    public void goUp() {
+        LOG.debug("goUp()");
+        rotateTo(MOTOR_INITIAL_UP_POSITION);
     }
 
     /**
-     * turn the climbFront into the home position
+     * turn the climbFront into the down position
      */
-    public void goClimb() {
-        LOG.debug("goClimb()");
-        rotateTo(climbPosition);
+    public void goDown() {
+        LOG.debug("goDown()");
+        rotateTo(MOTOR_INITIAL_DOWN_POSITION);
     }
 }
