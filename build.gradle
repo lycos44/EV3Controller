@@ -11,7 +11,7 @@ allprojects {
     apply plugin: 'java'
     apply plugin: 'distribution'
     group = 'de.munro'
-    version = '01.01.01-SNAPSHOT'
+    version = '01.01.02'
 }
 
 subprojects {
