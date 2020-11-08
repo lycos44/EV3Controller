@@ -8,19 +8,18 @@ import org.slf4j.LoggerFactory;
 
 public class ClimbBackMotor extends Motor {
     private static final Logger LOG = LoggerFactory.getLogger(ClimbBackMotor.class);
-    private static final int MOTOR_SPEED_INITIAL = 30;
-    private static final int MOTOR_SPEED = 150;
-    private static final int MINIMUM_POSITION_DIFFERENCE = 100;
-    private static final int MOTOR_INITIAL_UP_POSITION = 40;
-    private static final int MOTOR_INITIAL_DOWN_POSITION = 450;
+    private static final int MOTOR_SPEED_INITIAL = 50;
+    private static final int MOTOR_SPEED = 600;
 
     private BaseRegulatedMotor motor;
+    private int downPosition = 0;
+    private int upPosition = 30;
 
     /**
      * Constructor
      */
     public ClimbBackMotor() {
-        super(Polarity.NORMAL, MotorType.climbBack);
+        super(Polarity.INVERSED, MotorType.climbBack);
         int attempts = 0;
         do {
             this.motor = createMotor();
@@ -29,7 +28,6 @@ public class ClimbBackMotor extends Motor {
             LOG.error("Initialisation of {} failed", this.getClass().getSimpleName());
             System.exit(EV3devConstants.SYSTEM_UNEXPECTED_ERROR);
         }
-        this.motor.setSpeed(MOTOR_SPEED_INITIAL);
     }
 
     /**
@@ -68,12 +66,15 @@ public class ClimbBackMotor extends Motor {
     public void init() {
         LOG.debug("init()");
         // search for the home position that can be set to the tolerance position
+        setSpeed(MOTOR_SPEED_INITIAL);
         rotateTillStopped(Rotation.reverse);
         resetTachoCount();
-        rotateTillStopped(Rotation.ahead);
-        rotateTo(MOTOR_INITIAL_UP_POSITION);
 
-        LOG.debug("(up, down): ({}, {})", MOTOR_INITIAL_UP_POSITION, MOTOR_INITIAL_DOWN_POSITION);
+        rotateTillStopped(Rotation.ahead);
+        downPosition = this.getTachoCount()-20;
+        goUp();
+
+        LOG.debug("(up, down): ({}, {})", upPosition, downPosition);
         setSpeed(MOTOR_SPEED);
     }
 
@@ -82,7 +83,8 @@ public class ClimbBackMotor extends Motor {
      */
     public void goUp() {
         LOG.debug("goUp()");
-        rotateTo(MOTOR_INITIAL_UP_POSITION);
+        rotateTo(upPosition);
+        LOG.debug("(up): ({})", this.getTachoCount());
     }
 
     /**
@@ -90,6 +92,7 @@ public class ClimbBackMotor extends Motor {
      */
     public void goDown() {
         LOG.debug("goDown()");
-        rotateTo(MOTOR_INITIAL_DOWN_POSITION);
+        rotateTo(downPosition);
+        LOG.debug("(down): ({})", this.getTachoCount());
     }
 }

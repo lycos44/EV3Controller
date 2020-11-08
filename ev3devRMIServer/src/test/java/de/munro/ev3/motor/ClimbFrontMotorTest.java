@@ -19,8 +19,8 @@ public class ClimbFrontMotorTest {
         exit.checkAssertionAfterwards(() -> {
             verify(climbFrontMotor, times(1)).rotateTillStopped(Motor.Rotation.reverse);
             verify(climbFrontMotor, times(1)).resetTachoCount();
-//            verify(climbFrontMotor, times(1)).rotateTo(20);
-            verify(climbFrontMotor, times(1)).setSpeed(400);
+            verify(climbFrontMotor, times(1)).rotateTo(20);
+            verify(climbFrontMotor, times(1)).setSpeed(1000);
         });
         doCallRealMethod().when(climbFrontMotor).init();
 

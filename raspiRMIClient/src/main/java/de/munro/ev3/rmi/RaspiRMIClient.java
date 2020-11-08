@@ -42,7 +42,7 @@ public class RaspiRMIClient {
         LOG.info("Finished");
     }
 
-    private void readInput(RemoteEV3 remoteEV3) {
+    protected void readInput(RemoteEV3 remoteEV3) {
         Scanner scanner = new Scanner(System.in);
 
         input: while (true) {

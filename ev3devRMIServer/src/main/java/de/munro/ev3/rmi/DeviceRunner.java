@@ -85,7 +85,7 @@ class DeviceRunner {
 
             if (backwardSensor.isPressed()) {
                 LOG.debug("*********** Backward: touch ***********");
-//                backwardWithClimb();
+                backwardWithClimb();
             }
 
             if (distanceSensor.getDistance() <= 30
@@ -96,7 +96,7 @@ class DeviceRunner {
                 driveMotor.setSpeed(DriveMotor.MOTOR_SPEED_SLOW);
             }
 
-            if (distanceSensor.getDistance() <= 15
+            if (distanceSensor.getDistance() <= 20
                     && ev3devRMIServer.getEv3devStatus().getDirection() == EV3devStatus.Direction.forward
             ) {
                 LOG.debug("*********** Forward: no distance ***********");
@@ -208,20 +208,13 @@ class DeviceRunner {
     }
 
     private void backwardWithClimb() {
-        driveMotor.stop();
         climbBackMotor.goDown();
-        driveMotor.backward();
         Delay.msDelay(2000);
-        driveMotor.stop();
         climbBackMotor.goUp();
         // back wheels are up
-        driveMotor.backward();
         Delay.msDelay(2000);
-        driveMotor.stop();
         climbFrontMotor.goDown();
-        driveMotor.backward();
         Delay.msDelay(1000);
-        driveMotor.stop();
         climbFrontMotor.goUp();
         // front wheels are up
     }

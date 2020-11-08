@@ -17,7 +17,7 @@ public class DriveMotor extends Motor {
      * Constructor
      */
     public DriveMotor() {
-        super(Polarity.INVERSED, MotorType.drive);
+        super(Polarity.NORMAL, MotorType.drive);
         int attempts = 0;
         do {
             this.motor = createMotor();

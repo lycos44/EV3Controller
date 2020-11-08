@@ -8,12 +8,12 @@ import org.slf4j.LoggerFactory;
 
 public class ClimbFrontMotor extends Motor {
     private static final Logger LOG = LoggerFactory.getLogger(ClimbFrontMotor.class);
-    private static final int MOTOR_SPEED_INITIAL = 100;
-    private static final int MOTOR_SPEED = 400;
+    private static final int MOTOR_SPEED_INITIAL = 200;
+    private static final int MOTOR_SPEED = 1000;
     private static final int MOTOR_INITIAL_UP_POSITION = 20;
-    private static final int MOTOR_INITIAL_DOWN_POSITION = 380;
 
     private BaseRegulatedMotor motor;
+    private int downPosition = 0;
 
     /**
      * Constructor
@@ -70,9 +70,10 @@ public class ClimbFrontMotor extends Motor {
         rotateTillStopped(Rotation.reverse);
         resetTachoCount();
         rotateTillStopped(Rotation.ahead);
+        downPosition = this.getTachoCount()-20;
         rotateTo(MOTOR_INITIAL_UP_POSITION);
 
-        LOG.debug("(up, down): ({}, {})", MOTOR_INITIAL_UP_POSITION, MOTOR_INITIAL_DOWN_POSITION);
+        LOG.debug("(up, down): ({}, {})", MOTOR_INITIAL_UP_POSITION, downPosition);
         setSpeed(MOTOR_SPEED);
     }
 
@@ -89,6 +90,6 @@ public class ClimbFrontMotor extends Motor {
      */
     public void goDown() {
         LOG.debug("goDown()");
-        rotateTo(MOTOR_INITIAL_DOWN_POSITION);
+        rotateTo(downPosition);
     }
 }
