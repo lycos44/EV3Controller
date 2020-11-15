@@ -116,7 +116,7 @@ public class EV3devStatus {
 
     @Override
     public String toString() {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         sb.append(toBeStopped).append(", ");
         sb.append(direction).append(", ");
         sb.append(turn).append(", ");

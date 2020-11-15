@@ -6,18 +6,28 @@ import lejos.hardware.port.Port;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.*;
+import java.util.Properties;
+
 public abstract class Motor {
     private static final Logger LOG = LoggerFactory.getLogger(Motor.class);
+    protected static final String DOWN_POSITION = "downPosition";
+    protected static final String UP_POSITION = "upPosition";
+    protected static final String LEFTMOST_POSITION = "leftmostPosition";
+    protected static final String RIGHTMOST_POSITION = "rightmostPosition";
+    protected static final String HOME_POSITION = "homePosition";
 
     public enum Rotation {
         ahead,
         reverse,
         stalled
     }
+
     public enum Polarity {
         NORMAL,
         INVERSED
     }
+
     public enum MotorType {
         drive(MotorPort.A),
         climbBack(MotorPort.B),
@@ -37,8 +47,8 @@ public abstract class Motor {
 
     private final Polarity polarity;
     private final MotorType motorType;
-    private Rotation rotationStalled = Rotation.stalled;
-    private int relativeSpeed;
+    private Rotation rotation = Rotation.stalled;
+    private Properties properties = new Properties();
 
     /**
      * Constructor
@@ -49,23 +59,15 @@ public abstract class Motor {
     }
 
     /**
-     * get relativeSpeed value
-     * @return relativeSpeed
+     * @return properties config values
      */
-    public int getRelativeSpeed() {
-        return relativeSpeed;
-    }
-
-    /**
-     * set value fo relativeSpeed
-     * @param relativeSpeed
-     */
-    public void setRelativeSpeed(int relativeSpeed) {
-        this.relativeSpeed = relativeSpeed;
-    }
+    public Properties getProperties() {
+        return properties;
+    };
 
     /**
      * information about the member motor instance
+     *
      * @return true, if the member motor is not null
      */
     public boolean isInitialized() {
@@ -109,19 +111,20 @@ public abstract class Motor {
     /**
      * @return motorType
      */
-    public Rotation getRotationStalled() {
-        return rotationStalled;
+    public Rotation getRotation() {
+        return rotation;
     }
 
     /**
-     * @param rotationStalled
+     * @param rotation direction the motor rotates
      */
-    public void setRotationStalled(Rotation rotationStalled) {
-        this.rotationStalled = rotationStalled;
+    public void setRotation(Rotation rotation) {
+        this.rotation = rotation;
     }
 
     /**
      * provides information about the status of the motor
+     *
      * @return true, if the motor has to be stopped
      */
     abstract boolean is2BeStopped();
@@ -135,6 +138,7 @@ public abstract class Motor {
 
     /**
      * create a new motor instance
+     *
      * @return EV3MediumRegulatedMotor
      */
     abstract BaseRegulatedMotor createMotor();
@@ -145,7 +149,7 @@ public abstract class Motor {
      */
     public void forward() {
         LOG.debug("forward.polarity: {}", getPolarity());
-        setRotationStalled(Rotation.stalled);
+        setRotation(Rotation.stalled);
         switch (getPolarity()) {
             case NORMAL:
                 LOG.debug("getMotor().forward()");
@@ -178,22 +182,25 @@ public abstract class Motor {
 
     /**
      * rotate until the call of is2BeStopped provides true
-     * @param rotation
+     *
+     * @param rotation direction the motor rotates
      */
     public void rotateTillStopped(Rotation rotation) {
         LOG.debug("rotateTillStopped()");
-        if (getRotationStalled().equals(rotation)) {
+        if (getRotation().equals(rotation)) {
             LOG.debug("Tried to rotate in stalled direction");
             return;
         }
         switch (rotation) {
-            case ahead: forward();
-            break;
-            case reverse: backward();
+            case ahead:
+                forward();
+                break;
+            case reverse:
+                backward();
         }
-        while(!is2BeStopped()) {
+        while (!is2BeStopped()) {
         }
-        setRotationStalled(rotation);
+        setRotation(rotation);
         stop();
     }
 
@@ -240,4 +247,57 @@ public abstract class Motor {
      * initialize status of motor, i.e., find home position
      */
     public abstract void init();
+
+    /**
+     * check whether all necessary properties could be read
+     */
+    public abstract boolean verifyProperties();
+
+    private String getPropertiesFilename(Class clazz) {
+        return "config/"+clazz.getSimpleName() + ".properties";
+    }
+
+    /**
+     * read status information of the motor to the property file
+     */
+    public boolean readPropertyFile() {
+        LOG.debug("readPropertyFile()");
+        try (InputStream inputStream = new FileInputStream(getPropertiesFilename(this.getClass()))) {
+
+            getProperties().load(inputStream);
+            LOG.debug("properties({})", getProperties());
+
+        } catch (FileNotFoundException e) {
+            return false;
+        } catch (IOException e) {
+            return false;
+        }
+        return verifyProperties();
+    }
+
+    /**
+     * write status information of the motor to the property file
+     */
+    public void writePropertyFile() {
+        File propertiesFile = new File(getPropertiesFilename(this.getClass()));
+        propertiesFile.getParentFile().mkdirs();
+        try (OutputStream outputStream = new FileOutputStream(propertiesFile)) {
+
+            getProperties().store(outputStream, null);
+
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * convert int position to string property value
+     * @param position value
+     * @return converted string
+     */
+    protected String toString(int position) {
+        return Integer.toString(position);
+    }
 }

@@ -64,6 +64,18 @@ public class DriveMotor extends Motor {
     @Override
     public void init() {
         LOG.debug("init()");
+        if (readPropertyFile()) {
+            return;
+        }
+        writePropertyFile();
+    }
+
+    /**
+     * @link Motor#verifyProperties()
+     */
+    @Override
+    public boolean verifyProperties() {
+        return getProperties().isEmpty();
     }
 
     /**

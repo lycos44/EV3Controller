@@ -10,10 +10,40 @@ public class ClimbFrontMotor extends Motor {
     private static final Logger LOG = LoggerFactory.getLogger(ClimbFrontMotor.class);
     private static final int MOTOR_SPEED_INITIAL = 200;
     private static final int MOTOR_SPEED = 1000;
-    private static final int MOTOR_INITIAL_UP_POSITION = 20;
 
     private BaseRegulatedMotor motor;
-    private int downPosition = 0;
+
+    /**
+     * get the motor down position
+     * @return down position
+     */
+    public int getDownPosition() {
+        return Integer.parseInt(getProperties().get(DOWN_POSITION).toString());
+    }
+
+    /**
+     * set the motor down position
+     * @param position down
+     */
+    public void setDownPosition(int position) {
+        getProperties().put(DOWN_POSITION, toString(position));
+    }
+
+    /**
+     * get the motor up position
+     * @return up position
+     */
+    public int getUpPosition() {
+        return Integer.parseInt(getProperties().get(UP_POSITION).toString());
+    }
+
+    /**
+     * set the motor up position
+     * @param position up
+     */
+    public void setUpPosition(int position) {
+        getProperties().put(UP_POSITION, toString(position));
+    }
 
     /**
      * Constructor
@@ -66,15 +96,30 @@ public class ClimbFrontMotor extends Motor {
     @Override
     public void init() {
         LOG.debug("init()");
+        if (readPropertyFile()) {
+            return;
+        }
+
+        setUpPosition(20);
         // search for the home position that can be set to the tolerance position
         rotateTillStopped(Rotation.reverse);
         resetTachoCount();
         rotateTillStopped(Rotation.ahead);
-        downPosition = this.getTachoCount()-20;
-        rotateTo(MOTOR_INITIAL_UP_POSITION);
+        setDownPosition(getTachoCount()-20);
+        rotateTo(getUpPosition());
 
-        LOG.debug("(up, down): ({}, {})", MOTOR_INITIAL_UP_POSITION, downPosition);
+        LOG.debug("(up, down): ({}, {})", getUpPosition(), getDownPosition());
+        writePropertyFile();
         setSpeed(MOTOR_SPEED);
+    }
+
+    /**
+     * @link Motor#verifyProperties()
+     */
+    @Override
+    public boolean verifyProperties() {
+        return getProperties().getProperty(DOWN_POSITION) != null
+                && getProperties().getProperty(UP_POSITION) != null;
     }
 
     /**
@@ -82,7 +127,7 @@ public class ClimbFrontMotor extends Motor {
      */
     public void goUp() {
         LOG.debug("goUp()");
-        rotateTo(MOTOR_INITIAL_UP_POSITION);
+        rotateTo(getUpPosition());
     }
 
     /**
@@ -90,6 +135,6 @@ public class ClimbFrontMotor extends Motor {
      */
     public void goDown() {
         LOG.debug("goDown()");
-        rotateTo(downPosition);
+        rotateTo(getDownPosition());
     }
 }

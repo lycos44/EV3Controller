@@ -13,9 +13,53 @@ public class SteeringMotor extends Motor {
 
     private BaseRegulatedMotor motor;
 
-    private int leftmostPosition = 0;
-    private int rightmostPosition = 0;
-    private int homePosition = 0;
+    /**
+     * get the leftmost motor position
+     * @return leftmost position
+     */
+    public int getLeftmostPosition() {
+        return Integer.parseInt(getProperties().get(LEFTMOST_POSITION).toString());
+    }
+
+    /**
+     * set the leftmost motor position
+      * @param position leftmost
+     */
+    public void setLeftmostPosition(int position) {
+        getProperties().put(LEFTMOST_POSITION, toString(position));
+    }
+
+    /**
+     * get the rightmost motor position
+     * @return rightmost position
+     */
+    public int getRightmostPosition() {
+        return Integer.parseInt(getProperties().get(RIGHTMOST_POSITION).toString());
+    }
+
+    /**
+     * set the leftmost motor position
+     * @param position rightmost
+     */
+    public void setRightmostPosition(int position) {
+        getProperties().put(RIGHTMOST_POSITION, toString(position));
+    }
+
+    /**
+     * get the home position of the motor
+     * @return home position
+     */
+    public int getHomePosition() {
+        return Integer.parseInt(getProperties().get(HOME_POSITION).toString());
+    }
+
+    /**
+     * set the home position of the motor
+     * @param position home
+     */
+    public void setHomePosition(int position) {
+        getProperties().put(HOME_POSITION, toString(position));
+    }
 
     /**
      * Constructor
@@ -68,40 +112,54 @@ public class SteeringMotor extends Motor {
     @Override
     public void init() {
         LOG.debug("init()");
+        if (readPropertyFile()) {
+            return;
+        }
         // search for the position that can be set to zero
         rotateTillStopped(Rotation.reverse);
         resetTachoCount();
         rotateTillStopped(Rotation.ahead);
-        leftmostPosition = getTachoCount();
-        homePosition = leftmostPosition/2;
-        rotateTo(homePosition);
+        setLeftmostPosition(getTachoCount());
+        setHomePosition(getLeftmostPosition()/2);
+        rotateTo(getHomePosition());
         // adjust positions
-        leftmostPosition -= MOTOR_POSITION_BUFFER;
-        rightmostPosition = MOTOR_POSITION_BUFFER;
-        LOG.debug("(left, home, right): ({}, {}, {})", leftmostPosition, homePosition, rightmostPosition);
+        setLeftmostPosition(getLeftmostPosition()-MOTOR_POSITION_BUFFER);
+        setRightmostPosition(MOTOR_POSITION_BUFFER);
+        LOG.debug("(left, home, right): ({}, {}, {})", getLeftmostPosition(), getHomePosition(), getRightmostPosition());
+        writePropertyFile();
     }
 
     /**
-     * turn the climbFront into the home position
+     * @link Motor#verifyProperties()
+     */
+    @Override
+    public boolean verifyProperties() {
+        return getProperties().getProperty(LEFTMOST_POSITION) != null
+                && getProperties().getProperty(HOME_POSITION) != null
+                && getProperties().getProperty(RIGHTMOST_POSITION) != null;
+    }
+
+    /**
+     * turn the steering into the home position
      */
     public void goStraight() {
         LOG.debug("goStraight()");
-        rotateTo(homePosition);
+        rotateTo(getHomePosition());
     }
 
     /**
-     * turn the climbFront into the leftmost position
+     * turn the steering into the leftmost position
      */
     public void goLeft() {
         LOG.debug("goLeft()");
-        rotateTo(leftmostPosition);
+        rotateTo(getLeftmostPosition());
     }
 
     /**
-     * turn the climbFront into the rightmost position
+     * turn the steering into the rightmost position
      */
     public void goRight() {
         LOG.debug("goRight()");
-        rotateTo(rightmostPosition);
+        rotateTo(getRightmostPosition());
     }
 }
