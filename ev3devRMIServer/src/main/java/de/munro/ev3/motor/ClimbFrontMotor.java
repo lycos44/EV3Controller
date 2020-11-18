@@ -14,6 +14,22 @@ public class ClimbFrontMotor extends Motor {
     private BaseRegulatedMotor motor;
 
     /**
+     * Constructor
+     */
+    public ClimbFrontMotor() {
+        super(Polarity.INVERSED, MotorType.climbFront);
+        int attempts = 0;
+        do {
+            this.motor = createMotor();
+        } while (null == this.motor && attempts++<1);
+        if (null == this.motor) {
+            LOG.error("Initialisation of {} failed", this.getClass().getSimpleName());
+            System.exit(EV3devConstants.SYSTEM_UNEXPECTED_ERROR);
+        }
+        this.motor.setSpeed(MOTOR_SPEED_INITIAL);
+    }
+
+    /**
      * get the motor down position
      * @return down position
      */
@@ -43,22 +59,6 @@ public class ClimbFrontMotor extends Motor {
      */
     public void setUpPosition(int position) {
         getProperties().put(UP_POSITION, toString(position));
-    }
-
-    /**
-     * Constructor
-     */
-    public ClimbFrontMotor() {
-        super(Polarity.INVERSED, MotorType.climbFront);
-        int attempts = 0;
-        do {
-            this.motor = createMotor();
-        } while (null == this.motor && attempts++<1);
-        if (null == this.motor) {
-            LOG.error("Initialisation of {} failed", this.getClass().getSimpleName());
-            System.exit(EV3devConstants.SYSTEM_UNEXPECTED_ERROR);
-        }
-        this.motor.setSpeed(MOTOR_SPEED_INITIAL);
     }
 
     /**

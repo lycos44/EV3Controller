@@ -100,6 +100,14 @@ public class RaspiRMIClient {
                         System.out.println("backdown");
                         remoteEV3.backdown();
                         break;
+                    case "reset":
+                        System.out.println("reset");
+                        remoteEV3.reset();
+                        break;
+                    case "test":
+                        System.out.println("test");
+                        remoteEV3.test();
+                        break;
                     case "shutdown":
                         System.out.println("Exit!");
                         remoteEV3.shutdown();

@@ -13,6 +13,8 @@ public enum Command {
     FRONTDOWN("frontdown"),
     BACKUP("backup"),
     BACKDOWN("backdown"),
+    RESET("reset"),
+    TEST("test"),
     SHUTDOWN("shutdown");
 
     private final String name;

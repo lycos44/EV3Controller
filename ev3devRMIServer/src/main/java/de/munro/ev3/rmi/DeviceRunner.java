@@ -9,6 +9,7 @@ import de.munro.ev3.sensor.ColorSensor;
 import de.munro.ev3.sensor.DistanceSensor;
 import de.munro.ev3.sensor.GyroSensor;
 import ev3dev.sensors.Battery;
+import lejos.robotics.Color;
 import lejos.utility.Delay;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,6 +30,9 @@ class DeviceRunner {
     private SteeringMotor steeringMotor;
     private ClimbFrontMotor climbFrontMotor;
 
+    /**
+     * Constructor
+     */
     DeviceRunner() {
         this.backwardSensor = new BackwardSensor();
         this.gyroSensor = new GyroSensor();
@@ -41,13 +45,10 @@ class DeviceRunner {
         this.climbFrontMotor = new ClimbFrontMotor();
     }
 
-    void stop() {
-        this.driveMotor.stop();
-        this.climbBackMotor.stop();
-        this.steeringMotor.stop();
-        this.climbFrontMotor.stop();
-    }
-
+    /**
+     * main thread methode: initialize, polling for events
+     * @param ev3devRMIServer server instance
+     */
     void run(EV3devRMIServer ev3devRMIServer) {
         LOG.info("initialize all motor devices");
 
@@ -65,16 +66,13 @@ class DeviceRunner {
         EV3devStatus.Climb currentBack = EV3devStatus.Climb.up;
         double currentVoltage = 0;
 
+        // the EV3devStatus is checked, to decide what to do next
         while (true) {
             // what about are battery, is it running low?
             double voltage = Math.round(10.0 * Battery.getInstance().getVoltage()) / 10.0;
             if (voltage <= MINIMUM_VOLTAGE) {
                 LOG.error("EV3 battery is running low: {}, CANNOT PROCEED, PLEASE RECHARGE!", voltage);
                 System.exit(EV3devConstants.SYSTEM_UNEXPECTED_ERROR);
-            }
-            // adapt speed?
-            if (currentVoltage == 0 || currentVoltage > voltage) {
-                adaptSpeed(voltage);
             }
 
             // the show is over?
@@ -83,11 +81,27 @@ class DeviceRunner {
                 break;
             }
 
+            // reset
+            if (ev3devRMIServer.getEv3devStatus().isReset()) {
+                LOG.info("reset steering motor properties");
+                steeringMotor.reset();
+                ev3devRMIServer.getEv3devStatus().setReset(false);
+            }
+
+            // test
+            if (ev3devRMIServer.getEv3devStatus().isTest()) {
+                LOG.info("test");
+                doTheTest();
+                ev3devRMIServer.getEv3devStatus().setTest(false);
+            }
+
+            // touched barrier in the rear
             if (backwardSensor.isPressed()) {
                 LOG.debug("*********** Backward: touch ***********");
                 backwardWithClimb();
             }
 
+            // noticed barrier in front, less than 30 to go
             if (distanceSensor.getDistance() <= 30
                     && ev3devRMIServer.getEv3devStatus().getDirection() == EV3devStatus.Direction.forward
                     && driveMotor.getSpeed() == DriveMotor.MOTOR_SPEED_NORMAL
@@ -96,6 +110,7 @@ class DeviceRunner {
                 driveMotor.setSpeed(DriveMotor.MOTOR_SPEED_SLOW);
             }
 
+            // noticed barrier in front, less than 20 to go
             if (distanceSensor.getDistance() <= 20
                     && ev3devRMIServer.getEv3devStatus().getDirection() == EV3devStatus.Direction.forward
             ) {
@@ -103,12 +118,14 @@ class DeviceRunner {
                 ev3devRMIServer.getEv3devStatus().setDirection(EV3devStatus.Direction.stop);
             }
 
+            // no floor detected in front
             if ((colorSensor.toString().equals("none") || colorSensor.toString().equals("undefined")) && ev3devRMIServer.getEv3devStatus().getDirection() == EV3devStatus.Direction.forward) {
                 LOG.debug("*********** Forward: unknown surface ***********");
                 ev3devRMIServer.getEv3devStatus().setDirection(EV3devStatus.Direction.stop);
             }
+
             LOG.info("motor status: ({})", ev3devRMIServer.getEv3devStatus());
-            LOG.info("sensor status: ({}, {}, {}, {}, {})", Battery.getInstance().getVoltage(), distanceSensor, backwardSensor, gyroSensor, colorSensor);
+            LOG.info("sensor status: ({}, {}, {}, {}, {}, {})", this.driveMotor.getTachoCount(), Battery.getInstance().getVoltage(), distanceSensor, backwardSensor, gyroSensor, colorSensor);
 
             // direction needs to be changed?
             if (currentDirection != ev3devRMIServer.getEv3devStatus().getDirection()) {
@@ -138,8 +155,23 @@ class DeviceRunner {
         }
     }
 
-    private void adaptSpeed(double voltage) {
+    private void doTheTest() {
+        this.driveMotor.setSpeed(100);
+        this.driveMotor.forward();
+        while(this.colorSensor.getColorID() != Color.BLACK) {
+            Delay.msDelay(DELAY_PERIOD_SHORT);
+        }
+        this.driveMotor.stop();
+    }
 
+    /**
+     * stop all motors
+     */
+    void stop() {
+        this.driveMotor.stop();
+        this.climbBackMotor.stop();
+        this.steeringMotor.stop();
+        this.climbFrontMotor.stop();
     }
 
     private EV3devStatus.Climb doFront(EV3devStatus.Climb front) {
@@ -211,11 +243,11 @@ class DeviceRunner {
         climbBackMotor.goDown();
         Delay.msDelay(2000);
         climbBackMotor.goUp();
-        // back wheels are up
+        // back is up
         Delay.msDelay(2000);
         climbFrontMotor.goDown();
         Delay.msDelay(1000);
         climbFrontMotor.goUp();
-        // front wheels are up
+        // front is up
     }
 }

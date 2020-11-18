@@ -20,11 +20,11 @@ public class EV3devRMIServer extends UnicastRemoteObject implements RemoteEV3 {
 
     // Configuration
     private String host = LOCAL_HOST;
-    private EV3devStatus ev3devStatus;
+    private final EV3devStatus ev3devStatus;
 
     private EV3devRMIServer(String[] args) throws RemoteException {
         super();
-        if (null != args && args.length >= 1 && !args[0].isEmpty()){
+        if (null != args && args.length >= 1 && !args[0].isEmpty()) {
             this.host = args[0];
         }
         ev3devStatus = new EV3devStatus();
@@ -60,7 +60,7 @@ public class EV3devRMIServer extends UnicastRemoteObject implements RemoteEV3 {
         LOG.info("started successfully");
         DeviceRunner deviceRunner = new DeviceRunner();
         ev3devRMIServer.getEv3devStatus().setDeviceRunner(deviceRunner);
-        //To Stop the motor in case of pkill java for example
+        // To Stop the motor in case of pkill java for example
         Runtime.getRuntime().addShutdownHook(new Thread(deviceRunner::stop));
 
         deviceRunner.run(ev3devRMIServer);
@@ -151,6 +151,18 @@ public class EV3devRMIServer extends UnicastRemoteObject implements RemoteEV3 {
     public void backdown() {
         LOG.debug("backdown()");
         this.getEv3devStatus().setBack(EV3devStatus.Climb.down);
+    }
+
+    @Override
+    public void reset() {
+        LOG.debug("reset()");
+        this.getEv3devStatus().setReset(true);
+    }
+
+    @Override
+    public void test() {
+        LOG.debug("test()");
+        this.getEv3devStatus().setTest(true);
     }
 
     @Override

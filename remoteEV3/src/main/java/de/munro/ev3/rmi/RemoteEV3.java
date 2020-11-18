@@ -22,4 +22,8 @@ public interface RemoteEV3 extends Remote
     void frontdown() throws RemoteException;
     void backup() throws RemoteException;
     void backdown() throws RemoteException;
+
+    void reset() throws RemoteException;
+
+    void test() throws RemoteException;;
 }

@@ -20,6 +20,7 @@ public class CommandTest {
         assertThat(Command.FRONTUP.getName(), is("frontup"));
         assertThat(Command.FRONTDOWN.getName(), is("frontdown"));
         assertThat(Command.BACKUP.getName(), is("backup"));
+        assertThat(Command.RESET.getName(), is("reset"));
         assertThat(Command.BACKDOWN.getName(), is("backdown"));
         assertThat(Command.SHUTDOWN.getName(), is("shutdown"));
     }

@@ -20,6 +20,8 @@ public class EV3devStatus {
     }
 
     private boolean toBeStopped = false;
+    private boolean reset = false;
+    private boolean test = false;
     private DeviceRunner deviceRunner;
     private Turn turn = Turn.straight;
     private Direction direction = Direction.stop;
@@ -112,6 +114,34 @@ public class EV3devStatus {
      */
     public void setBack(Climb back) {
         this.back = back;
+    }
+
+    /**
+     * get the value of reset
+     */
+    public boolean isReset() {
+        return this.reset;
+    }
+
+    /**
+     * set the value of reset
+     */
+    public void setReset(boolean reset) {
+        this.reset = reset;
+    }
+
+    /**
+     * get the value of test
+     */
+    public boolean isTest() {
+        return test;
+    }
+
+    /**
+     * set the value of test
+     */
+    public void setTest(boolean test) {
+        this.test = test;
     }
 
     @Override

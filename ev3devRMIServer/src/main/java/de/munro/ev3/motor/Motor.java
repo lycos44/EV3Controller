@@ -16,6 +16,7 @@ public abstract class Motor {
     protected static final String LEFTMOST_POSITION = "leftmostPosition";
     protected static final String RIGHTMOST_POSITION = "rightmostPosition";
     protected static final String HOME_POSITION = "homePosition";
+    protected static final String IMPROVE_HOME_POSITION = "improveHomePosition";
 
     public enum Rotation {
         ahead,

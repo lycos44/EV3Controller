@@ -14,6 +14,22 @@ public class SteeringMotor extends Motor {
     private BaseRegulatedMotor motor;
 
     /**
+     * Constructor
+     */
+    public SteeringMotor() {
+        super(Polarity.NORMAL, MotorType.steering);
+        int attempts = 0;
+        do {
+            this.motor = createMotor();
+        } while (null == this.motor && attempts++<1);
+        if (null == this.motor) {
+            LOG.error("Initialisation of {} failed", this.getClass().getSimpleName());
+            System.exit(EV3devConstants.SYSTEM_UNEXPECTED_ERROR);
+        }
+        this.motor.setSpeed(MOTOR_SPEED);
+    }
+
+    /**
      * get the leftmost motor position
      * @return leftmost position
      */
@@ -50,7 +66,9 @@ public class SteeringMotor extends Motor {
      * @return home position
      */
     public int getHomePosition() {
-        return Integer.parseInt(getProperties().get(HOME_POSITION).toString());
+        int homePosition = Integer.parseInt(getProperties().get(HOME_POSITION).toString());
+        homePosition += Integer.parseInt(getProperties().get(IMPROVE_HOME_POSITION).toString());
+        return homePosition;
     }
 
     /**
@@ -62,19 +80,11 @@ public class SteeringMotor extends Motor {
     }
 
     /**
-     * Constructor
+     * set the home position of the motor
+     * @param position home
      */
-    public SteeringMotor() {
-        super(Polarity.NORMAL, MotorType.steering);
-        int attempts = 0;
-        do {
-            this.motor = createMotor();
-        } while (null == this.motor && attempts++<1);
-            if (null == this.motor) {
-            LOG.error("Initialisation of {} failed", this.getClass().getSimpleName());
-            System.exit(EV3devConstants.SYSTEM_UNEXPECTED_ERROR);
-        }
-        this.motor.setSpeed(MOTOR_SPEED);
+    public void setImproveHomePosition(int position) {
+        getProperties().put(IMPROVE_HOME_POSITION, toString(position));
     }
 
     /**
@@ -121,12 +131,27 @@ public class SteeringMotor extends Motor {
         rotateTillStopped(Rotation.ahead);
         setLeftmostPosition(getTachoCount());
         setHomePosition(getLeftmostPosition()/2);
+        setImproveHomePosition(0);
         rotateTo(getHomePosition());
         // adjust positions
         setLeftmostPosition(getLeftmostPosition()-MOTOR_POSITION_BUFFER);
         setRightmostPosition(MOTOR_POSITION_BUFFER);
         LOG.debug("(left, home, right): ({}, {}, {})", getLeftmostPosition(), getHomePosition(), getRightmostPosition());
         writePropertyFile();
+    }
+
+    /**
+     * reset motor settings
+     */
+    public void reset() {
+        LOG.debug("reset()");
+        readPropertyFile();
+
+        rotateTillStopped(Rotation.reverse);
+        resetTachoCount();
+        rotateTillStopped(Rotation.ahead);
+        rotateTo(getHomePosition());
+        LOG.debug("(left, home, right): ({}, {}, {})", getLeftmostPosition(), getHomePosition(), getRightmostPosition());
     }
 
     /**

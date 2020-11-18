@@ -101,12 +101,14 @@ public class SteeringMotorTest {
     public void getHomePosition() {
         SteeringMotor steeringMotor = Mockito.mock(SteeringMotor.class);
         doCallRealMethod().when(steeringMotor).setHomePosition(anyInt());
+        doCallRealMethod().when(steeringMotor).setImproveHomePosition(anyInt());
         doCallRealMethod().when(steeringMotor).getHomePosition();
         doCallRealMethod().when(steeringMotor).toString(anyInt());
         Properties properties = new Properties();
         when(steeringMotor.getProperties()).thenReturn(properties);
 
         steeringMotor.setHomePosition(20);
+        steeringMotor.setImproveHomePosition(0);
 
         assertThat(steeringMotor.getHomePosition(), Matchers.is(20));
     }
