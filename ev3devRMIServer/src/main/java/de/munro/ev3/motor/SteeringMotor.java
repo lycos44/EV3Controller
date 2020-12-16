@@ -1,5 +1,6 @@
 package de.munro.ev3.motor;
 
+import de.munro.ev3.logger.SteeringMotorLogger;
 import de.munro.ev3.rmi.EV3devConstants;
 import ev3dev.actuators.lego.motors.BaseRegulatedMotor;
 import ev3dev.actuators.lego.motors.EV3MediumRegulatedMotor;
@@ -12,12 +13,17 @@ public class SteeringMotor extends Motor {
     private static final int MOTOR_POSITION_BUFFER = 10;
 
     private BaseRegulatedMotor motor;
+    private final SteeringMotorLogger steeringMotorLogger;
+    private EV3devConstants.Turn currentTurn;
 
     /**
      * Constructor
+     * @param steeringMotorLogger data logger
      */
-    public SteeringMotor() {
-        super(Polarity.NORMAL, MotorType.steering);
+    public SteeringMotor(SteeringMotorLogger steeringMotorLogger) {
+        super(Polarity.normal, MotorType.steering);
+        this.steeringMotorLogger = steeringMotorLogger;
+        this.currentTurn = steeringMotorLogger.getSteeringTurn();
         int attempts = 0;
         do {
             this.motor = createMotor();
@@ -27,6 +33,7 @@ public class SteeringMotor extends Motor {
             System.exit(EV3devConstants.SYSTEM_UNEXPECTED_ERROR);
         }
         this.motor.setSpeed(MOTOR_SPEED);
+        this.getLogger().setRunning(true);
     }
 
     /**
@@ -100,6 +107,34 @@ public class SteeringMotor extends Motor {
         return null;
     }
 
+    @Override
+    public void readLoggerData() {
+        if (currentTurn == getLogger().getSteeringTurn()) {
+            return;
+        }
+        switch (getLogger().getSteeringTurn()) {
+            case left:
+                this.goLeft();
+                break;
+            case right:
+                this.goRight();
+                break;
+            case straight:
+                this.goStraight();
+                break;
+        }
+        currentTurn = getLogger().getSteeringTurn();
+    }
+
+    @Override
+    public boolean isRunning() {
+        return steeringMotorLogger.isRunning();
+    }
+
+    public SteeringMotorLogger getLogger() {
+        return steeringMotorLogger;
+    }
+
     /**
      * @link Motor#getMotor()
      */
@@ -122,9 +157,6 @@ public class SteeringMotor extends Motor {
     @Override
     public void init() {
         LOG.debug("init()");
-        if (readPropertyFile()) {
-            return;
-        }
         // search for the position that can be set to zero
         rotateTillStopped(Rotation.reverse);
         resetTachoCount();
@@ -136,7 +168,9 @@ public class SteeringMotor extends Motor {
         // adjust positions
         setLeftmostPosition(getLeftmostPosition()-MOTOR_POSITION_BUFFER);
         setRightmostPosition(MOTOR_POSITION_BUFFER);
-        LOG.debug("(left, home, right): ({}, {}, {})", getLeftmostPosition(), getHomePosition(), getRightmostPosition());
+        if (readPropertyFile()) {
+            return;
+        }
         writePropertyFile();
     }
 
@@ -162,6 +196,14 @@ public class SteeringMotor extends Motor {
         return getProperties().getProperty(LEFTMOST_POSITION) != null
                 && getProperties().getProperty(HOME_POSITION) != null
                 && getProperties().getProperty(RIGHTMOST_POSITION) != null;
+    }
+
+    /**
+     * @link Motor#logStatus()
+     */
+    @Override
+    public void logStatus() {
+        LOG.debug("(left, home, right): ({}, {}, {})", getLeftmostPosition(), getHomePosition(), getRightmostPosition());
     }
 
     /**

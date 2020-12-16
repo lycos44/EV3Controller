@@ -1,6 +1,5 @@
 package de.munro.ev3.sensor;
 
-import de.munro.ev3.rmi.EV3devConstants;
 import ev3dev.sensors.ev3.EV3UltrasonicSensor;
 import lejos.robotics.SampleProvider;
 import org.slf4j.Logger;
@@ -15,7 +14,7 @@ public class DistanceSensor extends Sensor {
      * Constructor
      */
     public DistanceSensor() {
-        sensor = new EV3UltrasonicSensor(EV3devConstants.DISTANCE_SENSOR_PORT);
+        sensor = new EV3UltrasonicSensor(SensorType.distance.getPort());
     }
 
     /**
@@ -38,6 +37,9 @@ public class DistanceSensor extends Sensor {
         return  (int)sample[0];
     }
 
+    /**
+     * @link Object#toString
+     */
     @Override
     public String toString() {
         return Integer.toString(getDistance());

@@ -1,5 +1,6 @@
 package de.munro.ev3.motor;
 
+import de.munro.ev3.logger.ClimbBackMotorLogger;
 import de.munro.ev3.rmi.EV3devConstants;
 import ev3dev.actuators.lego.motors.BaseRegulatedMotor;
 import ev3dev.actuators.lego.motors.EV3LargeRegulatedMotor;
@@ -12,12 +13,17 @@ public class ClimbBackMotor extends Motor {
     private static final int MOTOR_SPEED = 600;
 
     private BaseRegulatedMotor motor;
+    private final ClimbBackMotorLogger climbBackMotorLogger;
+    private EV3devConstants.Climb currentPosition;
 
     /**
      * Constructor
+     * @param climbBackMotorLogger data logger
      */
-    public ClimbBackMotor() {
-        super(Polarity.INVERSED, MotorType.climbBack);
+    public ClimbBackMotor(ClimbBackMotorLogger climbBackMotorLogger) {
+        super(Polarity.inversed, MotorType.climbBack);
+        this.climbBackMotorLogger = climbBackMotorLogger;
+        this.currentPosition = climbBackMotorLogger.getClimbBack();
         int attempts = 0;
         do {
             this.motor = createMotor();
@@ -26,6 +32,35 @@ public class ClimbBackMotor extends Motor {
             LOG.error("Initialisation of {} failed", this.getClass().getSimpleName());
             System.exit(EV3devConstants.SYSTEM_UNEXPECTED_ERROR);
         }
+        this.getLogger().setRunning(true);
+    }
+
+    /**
+     * @link Motor#go()
+     */
+    @Override
+    public void readLoggerData() {
+        if (currentPosition == getLogger().getClimbBack()) {
+            return;
+        }
+        switch (getLogger().getClimbBack()) {
+            case up:
+                this.goUp();
+                break;
+            case down:
+                this.goDown();
+                break;
+        }
+        currentPosition = getLogger().getClimbBack();
+    }
+
+    @Override
+    public boolean isRunning() {
+        return climbBackMotorLogger.isRunning();
+    }
+
+    public ClimbBackMotorLogger getLogger() {
+        return climbBackMotorLogger;
     }
 
     /**
@@ -95,9 +130,6 @@ public class ClimbBackMotor extends Motor {
     @Override
     public void init() {
         LOG.debug("init()");
-        if (readPropertyFile()) {
-            return;
-        }
         // search for the home position that can be set to the tolerance position
         setUpPosition(30);
         setSpeed(MOTOR_SPEED_INITIAL);
@@ -108,9 +140,11 @@ public class ClimbBackMotor extends Motor {
         setDownPosition(this.getTachoCount()-20);
         goUp();
 
-        LOG.debug("(up, down): ({}, {})", getUpPosition(), getDownPosition());
-        writePropertyFile();
         setSpeed(MOTOR_SPEED);
+        if (readPropertyFile()) {
+            return;
+        }
+        writePropertyFile();
     }
 
     /**
@@ -123,12 +157,21 @@ public class ClimbBackMotor extends Motor {
     }
 
     /**
+     * @link Motor#logStatus()
+     */
+    @Override
+    public void logStatus() {
+        LOG.debug("(up, down, speed): ({}, {}, {})", getUpPosition(), getDownPosition(), getSpeed());
+    }
+
+    /**
      * turn the climbFront into the up position
      */
     public void goUp() {
         LOG.debug("goUp()");
+        setSpeed(MOTOR_SPEED_INITIAL);
         rotateTo(getUpPosition());
-        LOG.debug("(up): ({})", this.getTachoCount());
+        setSpeed(MOTOR_SPEED);
     }
 
     /**
@@ -137,6 +180,5 @@ public class ClimbBackMotor extends Motor {
     public void goDown() {
         LOG.debug("goDown()");
         rotateTo(getDownPosition());
-        LOG.debug("(down): ({})", this.getTachoCount());
     }
 }

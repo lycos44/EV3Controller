@@ -1,6 +1,12 @@
 package de.munro.ev3.rmi;
 
+import de.munro.ev3.controller.MotorThread;
+import de.munro.ev3.controller.SensorThread;
+import de.munro.ev3.logger.EV3devLogger;
+import de.munro.ev3.logger.LoggerData;
+import de.munro.ev3.motor.*;
 import ev3dev.actuators.Sound;
+import lejos.utility.Delay;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -12,22 +18,32 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 
+import static de.munro.ev3.rmi.EV3devConstants.DELAY_PERIOD_SHORT;
 import static de.munro.ev3.rmi.EV3devConstants.SYSTEM_FINISHED_SUCCESSFULLY;
 
 public class EV3devRMIServer extends UnicastRemoteObject implements RemoteEV3 {
     private static final Logger LOG = LoggerFactory.getLogger(EV3devRMIServer.class);
     private static final String LOCAL_HOST = "localhost";
 
-    // Configuration
     private String host = LOCAL_HOST;
-    private final EV3devStatus ev3devStatus;
+    // threads
+    private Thread sensorThread;
+    private Thread climbBackMotorThread;
+    private Thread climbFrontMotorThread;
+    private Thread driveMotorThread;
+    private Thread steeringMotorThread;
 
+    private final EV3devLogger ev3devLogger;
+
+    /**
+     * Constructor
+     */
     private EV3devRMIServer(String[] args) throws RemoteException {
         super();
         if (null != args && args.length >= 1 && !args[0].isEmpty()) {
             this.host = args[0];
         }
-        ev3devStatus = new EV3devStatus();
+        ev3devLogger = new EV3devLogger();
     }
 
     public static void main(String[] args) {
@@ -58,21 +74,55 @@ public class EV3devRMIServer extends UnicastRemoteObject implements RemoteEV3 {
             System.exit(EV3devConstants.SYSTEM_UNEXPECTED_ERROR);
         }
         LOG.info("started successfully");
-        DeviceRunner deviceRunner = new DeviceRunner();
-        ev3devRMIServer.getEv3devStatus().setDeviceRunner(deviceRunner);
-        // To Stop the motor in case of pkill java for example
-        Runtime.getRuntime().addShutdownHook(new Thread(deviceRunner::stop));
 
-        deviceRunner.run(ev3devRMIServer);
+        ev3devRMIServer.setSensorThread(ev3devRMIServer.startSensorThread(ev3devRMIServer.getEv3devLogger()));
+        ev3devRMIServer.setClimbBackMotorThread(ev3devRMIServer.startMotorThread(new ClimbBackMotor(ev3devRMIServer.getEv3devLogger().getClimbBackMotorLogger())));
+        ev3devRMIServer.setClimbFrontMotorThread(ev3devRMIServer.startMotorThread(new ClimbFrontMotor(ev3devRMIServer.getEv3devLogger().getFrontMotorLogger())));
+        ev3devRMIServer.setDriveMotorThread(ev3devRMIServer.startMotorThread(new DriveMotor(ev3devRMIServer.getEv3devLogger().getDriveMotorLogger())));
+        ev3devRMIServer.setSteeringMotorThread(ev3devRMIServer.startMotorThread(new SteeringMotor(ev3devRMIServer.getEv3devLogger().getSteeringMotorLogger())));
+
+
+        // To Stop the motor in case of pkill java for example
+        Runtime.getRuntime().addShutdownHook(new Thread(ev3devRMIServer::halt));
+
+        // controlling threads
+        while (ev3devRMIServer.getLoggerData().isRunning()) {
+            if (!ev3devRMIServer.getSteeringMotorThread().isAlive()) {
+                LOG.error("steering motor stopped running!");
+            }
+            Delay.msDelay(DELAY_PERIOD_SHORT);
+        }
+
         try {
             Naming.unbind(service);
-        } catch (RemoteException |NotBoundException | MalformedURLException e) {
+        } catch (RemoteException | NotBoundException | MalformedURLException e) {
             LOG.error("RMI unbinding failed", e);
             System.exit(EV3devConstants.SYSTEM_UNEXPECTED_ERROR);
         }
 
         System.exit(SYSTEM_FINISHED_SUCCESSFULLY);
         LOG.info("stopped");
+    }
+
+    /**
+     * stop all motors
+     */
+    private void halt() {
+        this.getLoggerData().setRunning(false);
+    }
+
+    private Thread startSensorThread(EV3devLogger ev3devLogger) {
+        Thread thread = new SensorThread(ev3devLogger.getSensorLogger());
+        thread.start();
+        return thread;
+    }
+
+    private Thread startMotorThread(Motor motor) {
+        Thread thread = new MotorThread(motor);
+        thread.setUncaughtExceptionHandler(
+                (t, e) -> LOG.error(t + " throws exception: " + e));
+        thread.start();
+        return thread;
     }
 
     private String getHost() {
@@ -89,93 +139,133 @@ public class EV3devRMIServer extends UnicastRemoteObject implements RemoteEV3 {
         LOG.debug("beep()");
         Sound sound = Sound.getInstance();
         int volume = sound.getVolume();
-        sound.setVolume(volume/2);
+        sound.setVolume(volume / 2);
         sound.beep();
     }
 
     @Override
     public void forward() {
         LOG.debug("forward()");
-        this.getEv3devStatus().setDirection(EV3devStatus.Direction.forward);
+        this.getLoggerData().setDriveDirection(EV3devConstants.Direction.forward);
     }
 
     @Override
     public void backward() {
         LOG.debug("backward()");
-        this.getEv3devStatus().setDirection(EV3devStatus.Direction.backward);
+        this.getLoggerData().setDriveDirection(EV3devConstants.Direction.backward);
     }
 
     @Override
     public void stop() {
         LOG.debug("stop()");
-        this.getEv3devStatus().setDirection(EV3devStatus.Direction.stop);
+        this.getLoggerData().setDriveDirection(EV3devConstants.Direction.stop);
     }
 
     @Override
     public void left() {
         LOG.debug("left()");
-        this.getEv3devStatus().setTurn(EV3devStatus.Turn.left);
+        this.getLoggerData().setSteeringTurn(EV3devConstants.Turn.left);
     }
 
     @Override
     public void right() {
         LOG.debug("right()");
-        this.getEv3devStatus().setTurn(EV3devStatus.Turn.right);
+        this.getLoggerData().setSteeringTurn(EV3devConstants.Turn.right);
     }
 
     @Override
     public void straight() {
         LOG.debug("straight()");
-        this.getEv3devStatus().setTurn(EV3devStatus.Turn.straight);
+        this.getLoggerData().setSteeringTurn(EV3devConstants.Turn.straight);
     }
 
     @Override
     public void frontup() {
         LOG.debug("frontup()");
-        this.getEv3devStatus().setFront(EV3devStatus.Climb.up);
+        this.getLoggerData().setClimbFront(EV3devConstants.Climb.up);
     }
 
     @Override
     public void frontdown() {
         LOG.debug("frontdown()");
-        this.getEv3devStatus().setFront(EV3devStatus.Climb.down);
+        this.getLoggerData().setClimbFront(EV3devConstants.Climb.down);
     }
 
     @Override
     public void backup() {
         LOG.debug("backup()");
-        this.getEv3devStatus().setBack(EV3devStatus.Climb.up);
+        this.getLoggerData().setClimbBack(EV3devConstants.Climb.up);
     }
 
     @Override
     public void backdown() {
         LOG.debug("backdown()");
-        this.getEv3devStatus().setBack(EV3devStatus.Climb.down);
+        this.getLoggerData().setClimbBack(EV3devConstants.Climb.down);
     }
 
     @Override
     public void reset() {
         LOG.debug("reset()");
-        this.getEv3devStatus().setReset(true);
+//        this.getEv3devStatus().setReset(true);
     }
 
     @Override
     public void test() {
         LOG.debug("test()");
-        this.getEv3devStatus().setTest(true);
+//        this.getEv3devStatus().setTest(true);
     }
 
     @Override
     public void shutdown() {
         LOG.debug("shutdown()");
-        this.getEv3devStatus().setToBeStopped(true);
+        this.getLoggerData().setRunning(false);
     }
 
-    /**
-     * provides the current status of the ev3dev devices
-     * @return ev3devStatus
-     */
-    EV3devStatus getEv3devStatus() {
-        return ev3devStatus;
+    public LoggerData getLoggerData() {
+        return ev3devLogger.getLoggerData();
+    }
+
+    public EV3devLogger getEv3devLogger() {
+        return ev3devLogger;
+    }
+
+    public Thread getSensorThread() {
+        return sensorThread;
+    }
+
+    public void setSensorThread(Thread sensorThread) {
+        this.sensorThread = sensorThread;
+    }
+
+    public Thread getClimbBackMotorThread() {
+        return climbBackMotorThread;
+    }
+
+    public void setClimbBackMotorThread(Thread climbBackMotorThread) {
+        this.climbBackMotorThread = climbBackMotorThread;
+    }
+
+    public Thread getClimbFrontMotorThread() {
+        return climbFrontMotorThread;
+    }
+
+    public void setClimbFrontMotorThread(Thread climbFrontMotorThread) {
+        this.climbFrontMotorThread = climbFrontMotorThread;
+    }
+
+    public Thread getDriveMotorThread() {
+        return driveMotorThread;
+    }
+
+    public void setDriveMotorThread(Thread driveMotorThread) {
+        this.driveMotorThread = driveMotorThread;
+    }
+
+    public Thread getSteeringMotorThread() {
+        return steeringMotorThread;
+    }
+
+    public void setSteeringMotorThread(Thread steeringMotorThread) {
+        this.steeringMotorThread = steeringMotorThread;
     }
 }

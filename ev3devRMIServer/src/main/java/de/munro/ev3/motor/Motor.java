@@ -3,14 +3,14 @@ package de.munro.ev3.motor;
 import ev3dev.actuators.lego.motors.BaseRegulatedMotor;
 import lejos.hardware.port.MotorPort;
 import lejos.hardware.port.Port;
-import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.util.Properties;
 
 public abstract class Motor {
-    private static final Logger LOG = LoggerFactory.getLogger(Motor.class);
+    private static final org.slf4j.Logger LOG = LoggerFactory.getLogger(Motor.class);
+    
     protected static final String DOWN_POSITION = "downPosition";
     protected static final String UP_POSITION = "upPosition";
     protected static final String LEFTMOST_POSITION = "leftmostPosition";
@@ -25,8 +25,8 @@ public abstract class Motor {
     }
 
     public enum Polarity {
-        NORMAL,
-        INVERSED
+        normal,
+        inversed
     }
 
     public enum MotorType {
@@ -49,15 +49,24 @@ public abstract class Motor {
     private final Polarity polarity;
     private final MotorType motorType;
     private Rotation rotation = Rotation.stalled;
-    private Properties properties = new Properties();
+    private final Properties properties = new Properties();
 
     /**
      * Constructor
+     * @param polarity the motor rotates in which direction
+     * @param motorType describes what kind of motor this instance realizes
      */
     public Motor(Polarity polarity, MotorType motorType) {
         this.polarity = polarity;
         this.motorType = motorType;
     }
+
+    /**
+     * react on changes in the current status
+     */
+    public abstract void readLoggerData();
+
+    public abstract boolean isRunning();
 
     /**
      * @return properties config values
@@ -67,8 +76,7 @@ public abstract class Motor {
     };
 
     /**
-     * information about the member motor instance
-     *
+     * motor is ready to do his job
      * @return true, if the member motor is not null
      */
     public boolean isInitialized() {
@@ -152,11 +160,11 @@ public abstract class Motor {
         LOG.debug("forward.polarity: {}", getPolarity());
         setRotation(Rotation.stalled);
         switch (getPolarity()) {
-            case NORMAL:
+            case normal:
                 LOG.debug("getMotor().forward()");
                 getMotor().forward();
                 break;
-            case INVERSED:
+            case inversed:
                 LOG.debug("getMotor().backward()");
                 getMotor().backward();
                 break;
@@ -170,11 +178,11 @@ public abstract class Motor {
     public void backward() {
         LOG.debug("backward.polarity: {}", getPolarity());
         switch (getPolarity()) {
-            case NORMAL:
+            case normal:
                 LOG.debug("getMotor().backward()");
                 getMotor().backward();
                 break;
-            case INVERSED:
+            case inversed:
                 LOG.debug("getMotor().forward()");
                 getMotor().forward();
                 break;
@@ -254,6 +262,11 @@ public abstract class Motor {
      */
     public abstract boolean verifyProperties();
 
+    /**
+     * build the properties filename
+     * @param clazz classname of the current instance
+     * @return properties filename
+     */
     private String getPropertiesFilename(Class clazz) {
         return "config/"+clazz.getSimpleName() + ".properties";
     }
@@ -286,8 +299,6 @@ public abstract class Motor {
 
             getProperties().store(outputStream, null);
 
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -301,4 +312,10 @@ public abstract class Motor {
     protected String toString(int position) {
         return Integer.toString(position);
     }
+
+    /**
+     * concat all info interesting for logging
+     * @return message to be logged
+     */
+    public abstract void logStatus();
 }

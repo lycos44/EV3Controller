@@ -4,8 +4,8 @@ import ev3dev.actuators.lego.motors.BaseRegulatedMotor;
 import org.junit.Test;
 import org.mockito.Mockito;
 
-import static de.munro.ev3.motor.Motor.Polarity.INVERSED;
-import static de.munro.ev3.motor.Motor.Polarity.NORMAL;
+import static de.munro.ev3.motor.Motor.Polarity.inversed;
+import static de.munro.ev3.motor.Motor.Polarity.normal;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.*;
@@ -42,7 +42,7 @@ public class MotorTest {
     public void forwardInversed() {
         Motor motor = Mockito.mock(Motor.class);
         doCallRealMethod().when(motor).forward();
-        when(motor.getPolarity()).thenReturn(INVERSED);
+        when(motor.getPolarity()).thenReturn(inversed);
         BaseRegulatedMotor regulatedMotor = Mockito.mock(BaseRegulatedMotor.class);
         when(motor.getMotor()).thenReturn(regulatedMotor);
 
@@ -55,7 +55,7 @@ public class MotorTest {
     public void forwardNormal() {
         Motor motor = Mockito.mock(Motor.class);
         doCallRealMethod().when(motor).forward();
-        when(motor.getPolarity()).thenReturn(NORMAL);
+        when(motor.getPolarity()).thenReturn(normal);
         BaseRegulatedMotor regulatedMotor = Mockito.mock(BaseRegulatedMotor.class);
         when(motor.getMotor()).thenReturn(regulatedMotor);
 
@@ -68,7 +68,7 @@ public class MotorTest {
     public void backwardInversed() {
         Motor motor = Mockito.mock(Motor.class);
         doCallRealMethod().when(motor).backward();
-        when(motor.getPolarity()).thenReturn(INVERSED);
+        when(motor.getPolarity()).thenReturn(inversed);
         BaseRegulatedMotor regulatedMotor = Mockito.mock(BaseRegulatedMotor.class);
         when(motor.getMotor()).thenReturn(regulatedMotor);
 
@@ -81,7 +81,7 @@ public class MotorTest {
     public void backwardNormal() {
         Motor motor = Mockito.mock(Motor.class);
         doCallRealMethod().when(motor).backward();
-        when(motor.getPolarity()).thenReturn(NORMAL);
+        when(motor.getPolarity()).thenReturn(normal);
         BaseRegulatedMotor regulatedMotor = Mockito.mock(BaseRegulatedMotor.class);
         when(motor.getMotor()).thenReturn(regulatedMotor);
 

@@ -1,5 +1,6 @@
 package de.munro.ev3.motor;
 
+import de.munro.ev3.logger.ClimbFrontMotorLogger;
 import de.munro.ev3.rmi.EV3devConstants;
 import ev3dev.actuators.lego.motors.BaseRegulatedMotor;
 import ev3dev.actuators.lego.motors.EV3MediumRegulatedMotor;
@@ -12,12 +13,17 @@ public class ClimbFrontMotor extends Motor {
     private static final int MOTOR_SPEED = 1000;
 
     private BaseRegulatedMotor motor;
+    private final ClimbFrontMotorLogger climbFrontMotorLogger;
+    private EV3devConstants.Climb currentPosition;
 
     /**
      * Constructor
+     * @param climbFrontMotorLogger data logger
      */
-    public ClimbFrontMotor() {
-        super(Polarity.INVERSED, MotorType.climbFront);
+    public ClimbFrontMotor(ClimbFrontMotorLogger climbFrontMotorLogger) {
+        super(Polarity.inversed, MotorType.climbFront);
+        this.climbFrontMotorLogger = climbFrontMotorLogger;
+        this.currentPosition = climbFrontMotorLogger.getClimbFront();
         int attempts = 0;
         do {
             this.motor = createMotor();
@@ -27,6 +33,7 @@ public class ClimbFrontMotor extends Motor {
             System.exit(EV3devConstants.SYSTEM_UNEXPECTED_ERROR);
         }
         this.motor.setSpeed(MOTOR_SPEED_INITIAL);
+        this.getLogger().setRunning(true);
     }
 
     /**
@@ -75,6 +82,37 @@ public class ClimbFrontMotor extends Motor {
     }
 
     /**
+     * @link Motor#doIt()
+     */
+    @Override
+    public void readLoggerData() {
+        if (currentPosition == getLogger().getClimbFront()) {
+            return;
+        }
+        switch (getLogger().getClimbFront()) {
+            case up:
+                this.goUp();
+                break;
+            case down:
+                this.goDown();
+                break;
+        }
+        currentPosition = getLogger().getClimbFront();
+    }
+
+    /**
+     * @link Motor#isRunning()
+     */
+    @Override
+    public boolean isRunning() {
+        return climbFrontMotorLogger.isRunning();
+    }
+
+    public ClimbFrontMotorLogger getLogger() {
+        return climbFrontMotorLogger;
+    }
+
+    /**
      * @link Motor#getMotor()
      */
     @Override
@@ -96,10 +134,6 @@ public class ClimbFrontMotor extends Motor {
     @Override
     public void init() {
         LOG.debug("init()");
-        if (readPropertyFile()) {
-            return;
-        }
-
         setUpPosition(20);
         // search for the home position that can be set to the tolerance position
         rotateTillStopped(Rotation.reverse);
@@ -108,9 +142,11 @@ public class ClimbFrontMotor extends Motor {
         setDownPosition(getTachoCount()-20);
         rotateTo(getUpPosition());
 
-        LOG.debug("(up, down): ({}, {})", getUpPosition(), getDownPosition());
-        writePropertyFile();
         setSpeed(MOTOR_SPEED);
+        if (readPropertyFile()) {
+            return;
+        }
+        writePropertyFile();
     }
 
     /**
@@ -123,11 +159,21 @@ public class ClimbFrontMotor extends Motor {
     }
 
     /**
+     * @link Motor#logStatus()
+     */
+    @Override
+    public void logStatus() {
+        LOG.debug("(up, down, speed): ({}, {}, {})", getUpPosition(), getDownPosition(), getSpeed());
+    }
+
+    /**
      * turn the climbFront into the up position
      */
     public void goUp() {
         LOG.debug("goUp()");
+        setSpeed(MOTOR_SPEED_INITIAL);
         rotateTo(getUpPosition());
+        setSpeed(MOTOR_SPEED);
     }
 
     /**

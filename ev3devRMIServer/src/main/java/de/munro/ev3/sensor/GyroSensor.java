@@ -1,6 +1,5 @@
 package de.munro.ev3.sensor;
 
-import de.munro.ev3.rmi.EV3devConstants;
 import ev3dev.sensors.ev3.EV3GyroSensor;
 import lejos.robotics.SampleProvider;
 import org.slf4j.Logger;
@@ -9,13 +8,13 @@ import org.slf4j.LoggerFactory;
 public class GyroSensor extends Sensor {
     private static final Logger LOG = LoggerFactory.getLogger(GyroSensor.class);
 
-    private EV3GyroSensor sensor;
+    private final EV3GyroSensor sensor;
 
     /**
      * Constructor
      */
     public GyroSensor() {
-        sensor = new EV3GyroSensor(EV3devConstants.GYRO_SENSOR_PORT);
+        sensor = new EV3GyroSensor(SensorType.gyro.getPort());
         sensor.reset();
     }
 
@@ -38,6 +37,9 @@ public class GyroSensor extends Sensor {
         return  (int)sample[0];
     }
 
+    /**
+     * @link Object#toString
+     */
     @Override
     public String toString() {
         return Integer.toString(getGyroAngleRate());

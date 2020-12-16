@@ -1,5 +1,6 @@
 package de.munro.ev3.motor;
 
+import de.munro.ev3.logger.DriveMotorLogger;
 import de.munro.ev3.rmi.EV3devConstants;
 import ev3dev.actuators.lego.motors.BaseRegulatedMotor;
 import ev3dev.actuators.lego.motors.EV3LargeRegulatedMotor;
@@ -9,24 +10,30 @@ import org.slf4j.LoggerFactory;
 public class DriveMotor extends Motor {
     private static final Logger LOG = LoggerFactory.getLogger(DriveMotor.class);
     public static final int MOTOR_SPEED_NORMAL = 300;
-    public static final int MOTOR_SPEED_SLOW = 100;
 
     private BaseRegulatedMotor motor;
+    private final DriveMotorLogger driveMotorLogger;
+    private EV3devConstants.Direction currentDirection;
 
     /**
      * Constructor
+     *
+     * @param driveMotorLogger data logger
      */
-    public DriveMotor() {
-        super(Polarity.NORMAL, MotorType.drive);
+    public DriveMotor(DriveMotorLogger driveMotorLogger) {
+        super(Polarity.normal, MotorType.drive);
+        this.driveMotorLogger = driveMotorLogger;
+        this.currentDirection = driveMotorLogger.getDriveDirection();
         int attempts = 0;
         do {
             this.motor = createMotor();
-        } while (null == this.motor && attempts++<1);
+        } while (null == this.motor && attempts++ < 1);
         if (null == this.motor) {
             LOG.error("Initialisation of {} failed", this.getClass().getSimpleName());
             System.exit(EV3devConstants.SYSTEM_UNEXPECTED_ERROR);
         }
         this.motor.setSpeed(MOTOR_SPEED_NORMAL);
+        this.getLogger().setRunning(true);
     }
 
     /**
@@ -40,6 +47,33 @@ public class DriveMotor extends Motor {
             LOG.error("Catch", e);
         }
         return null;
+    }
+
+    @Override
+    public void readLoggerData() {
+        if (currentDirection == getLogger().getDriveDirection()) {
+            return;
+        }
+        switch (getLogger().getDriveDirection()) {
+            case forward:
+                this.forward();
+                break;
+            case backward:
+                this.backward();
+                break;
+            case stop:
+                this.stop();
+        }
+        currentDirection = getLogger().getDriveDirection();
+    }
+
+    @Override
+    public boolean isRunning() {
+        return driveMotorLogger.isRunning();
+    }
+
+    public DriveMotorLogger getLogger() {
+        return driveMotorLogger;
     }
 
     /**
@@ -76,6 +110,14 @@ public class DriveMotor extends Motor {
     @Override
     public boolean verifyProperties() {
         return getProperties().isEmpty();
+    }
+
+    /**
+     * @link Motor#logStatus()
+     */
+    @Override
+    public void logStatus() {
+        LOG.debug("(dir, speed, count):({}, {},{})", getLogger().getDriveDirection(), getSpeed(), getTachoCount());
     }
 
     /**

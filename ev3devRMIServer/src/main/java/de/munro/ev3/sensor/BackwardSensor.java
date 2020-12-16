@@ -1,6 +1,5 @@
 package de.munro.ev3.sensor;
 
-import de.munro.ev3.rmi.EV3devConstants;
 import ev3dev.sensors.ev3.EV3TouchSensor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,7 +13,7 @@ public class BackwardSensor extends Sensor {
      * constructor
      */
     public BackwardSensor() {
-        sensor = new EV3TouchSensor(EV3devConstants.BACKWARD_SENSOR_PORT);
+        sensor = new EV3TouchSensor(SensorType.backward.getPort());
     }
 
     /**
@@ -32,6 +31,9 @@ public class BackwardSensor extends Sensor {
         return getSensor().isPressed();
     }
 
+    /**
+     * @link Object#toString
+     */
     @Override
     public String toString() {
         return Boolean.toString(isPressed());
