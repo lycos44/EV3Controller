@@ -1,0 +1,13 @@
+plugins {
+    id 'java'
+    id 'maven-publish'
+    id 'application'
+}
+
+application {
+    mainClass = 'de.munro.ev3.rmi.RemoteEV3'
+}
+
+repositories {
+    mavenLocal()
+}

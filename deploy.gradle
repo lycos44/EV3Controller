@@ -1,92 +1,104 @@
-
 ssh.settings {
     knownHosts = allowAnyHosts
 }
 
-task ('testConnection') {
+task('testConnection') {
     doLast {
-        ssh.run {
+        ssh.runInOrder  {
             session(remotes.ev3dev) {
-                println "ls ./ev3/ "
-                execute "ls ./ev3/ "
+                println "ls ./ev3/"
+                execute(['ls', '-l', './ev3'])
             }
         }
     }
 }
 
-task ('cleanRemote') {
+task('cleanRemote') {
     doLast {
-        ssh.run {
+        ssh.runInOrder  {
             session(remotes.ev3dev) {
                 println "remove from ev3dev "
-                execute "ls ./ev3/* "
-                execute "rm -Rf ./ev3 "
+                execute(['ls', '-l', './ev3'])
+                execute(['rm', '-Rf','./ev3'])
             }
             session(remotes.raspberrypi) {
                 println "remove from raspberrypi "
-                execute "ls ./ev3/* "
-                execute "rm -Rf ./ev3 "
+                execute(['ls', '-l', './ev3'])
+                execute(['rm', '-Rf','./ev3'])
             }
         }
     }
 }
 
-clean.doFirst {
-    subprojects.each {
-        it.afterEvaluate {
-            def cleanTask = it.tasks.findByName('clean')
-            if (cleanTask) {
-                dependsOn(cleanTask)
-            }
-        }
-    }
-}
-build.dependsOn clean
+def tarEV3File = "ev3dev-rmi-server-${version}.tar"
+def tarRaspiFile = "raspi-rmi-client-${version}.tar"
+def fromEV3Dir = "${projectDir}\\ev3dev-rmi-server\\build\\distributions\\"
+def fromRaspiDir = "${projectDir}\\raspi-rmi-client\\build\\distributions\\"
+def intoEV3Dir = "/home/robot/ev3/"
+def intoRaspiDir = "/home/pi/ev3/"
 
-task ('deployEV3') {
+task('printVariables') {
     doLast {
-        ssh.run {
+        ssh.runInOrder {
+            println fromRaspiDir+tarEV3File
+        }
+    }
+}
+
+task('deployEV3') {
+    doLast {
+        ssh.runInOrder  {
             session(remotes.ev3dev) {
-                execute "mkdir -p ./ev3/ "
-                put from: "./ev3devRMIServer/build/distributions/ev3devRMIServer-${version}.tar", into: "/home/robot/ev3"
-                execute "tar -xf ./ev3/ev3devRMIServer-${version}.tar -C ./ev3/ --touch "
-                println "ls -l ./ev3/ "
-                execute "ls -l ./ev3/ "
+                println "mkdir -p ${intoEV3Dir}"
+                execute(['mkdir', '-p', intoEV3Dir])
+                println "put from: ${fromEV3Dir}${tarEV3File}, into: ${intoEV3Dir}"
+                put     from: fromEV3Dir + tarEV3File, into: intoEV3Dir
+                println "tar -xf ${intoEV3Dir}${tarEV3File} -C ${intoEV3Dir} --touch"
+                execute(['tar', '-xf', intoEV3Dir+tarEV3File, '-C', intoEV3Dir, '--touch'])
+                println "ls -l " + intoEV3Dir
+                execute(['ls', '-l', intoEV3Dir])
             }
         }
     }
 }
 deployEV3.dependsOn clean, build, jar, distTar
 
-task ('deployRaspi') {
+task('deployRaspi') {
     doLast {
-        ssh.run {
+        ssh.runInOrder  {
             session(remotes.raspberrypi) {
-                execute "mkdir -p ./ev3/ "
-                put from: "./raspiRMIClient/build/distributions/raspiRMIClient-${version}.tar", into: "/home/pi/ev3"
-                execute "tar -xf ./ev3/raspiRMIClient-${version}.tar -C ./ev3/"
-                println "ls -l ./ev3/ "
-                execute "ls -l ./ev3/ "
+                println "mkdir -p ${intoRaspiDir}"
+                execute(['mkdir', '-p', intoRaspiDir])
+                println "put from: ${fromRaspiDir}${tarRaspiFile}, into: ${intoRaspiDir}"
+                put     from: fromRaspiDir + tarRaspiFile, into: intoRaspiDir
+                println "tar -xf ${intoRaspiDir}${tarRaspiFile} -C ${intoRaspiDir} --touch"
+                execute(['tar', '-xf', intoRaspiDir+tarRaspiFile, '-C', intoRaspiDir, '--touch'])
+                println "ls -l " + intoRaspiDir
+                execute(['ls', '-l', intoRaspiDir])
             }
         }
     }
 }
 deployRaspi.dependsOn build, jar
 
-task ('remoteRun') {
+task('remoteRun') {
     doLast {
-        ssh.run {
+        ssh.runInOrder  {
             session(remotes.ev3dev) {
-                execute "./ev3/ev3devRMIServer-${version}/bin/ev3devRMIServer& "
-                println "./ev3/ev3devRMIServer-${version}/bin/ev3devRMIServer& "
             }
         }
     }
 }
 
-task ('deployAndRun') {
+task('deployAndRun') {
 
 }
 deployAndRun.dependsOn cleanRemote, deployEV3, remoteRun
 
 apply from: 'config.gradle'
+
+task('printProperties') {
+    doLast {
+        println version
+    }
+}

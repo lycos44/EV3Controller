@@ -1,0 +1,27 @@
+plugins {
+    id 'java'
+    id 'maven-publish'
+    id 'application'
+}
+
+application {
+    mainClass = 'de.munro.ev3.rmi.RaspiRMIClient'
+}
+
+dependencies {
+    implementation project(':remote-ev3')
+}
+
+project.ext.classPathArtifacts = ["${project.name}-${version}.jar", "remoteEV3-${version}.jar"]
+
+jar {
+    doLast {
+        manifest {
+            attributes(
+                    'Manifest-Version': '1.0',
+                    'Main-Class': 'de.munro.ev3.rmi.RaspiRMIClient',
+                    'Implementation-Version': archiveVersion
+            )
+        }
+    }
+}
