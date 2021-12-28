@@ -3,8 +3,10 @@ package de.munro.ev3.motor;
 import de.munro.ev3.data.MotorData;
 import de.munro.ev3.data.SteeringMotorData;
 import de.munro.ev3.rmi.EV3devConstants;
+import de.munro.ev3.rmi.RemoteEV3;
 import ev3dev.actuators.lego.motors.BaseRegulatedMotor;
 import ev3dev.actuators.lego.motors.EV3MediumRegulatedMotor;
+import lejos.hardware.port.MotorPort;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -22,12 +24,12 @@ public class SteeringMotor extends Motor {
      * @param steeringMotorData steeringMotorData to set
      */
     public SteeringMotor(SteeringMotorData steeringMotorData) {
-        super(Polarity.normal, MotorType.steering);
+        super(Polarity.normal, RemoteEV3.MotorType.steering, steeringMotorData);
         this.steeringMotorData = steeringMotorData;
         this.turn = steeringMotorData.getTurn();
         int attempts = 0;
         do {
-            this.motor = createMotor();
+            this.motor = createMotor(MotorPort.C);
         } while (null == this.motor && attempts++<2);
         if (null == this.motor) {
             log.error("Initialisation of {} failed", this.getClass().getSimpleName());
@@ -99,9 +101,9 @@ public class SteeringMotor extends Motor {
      * @link Motor#createMotor()
      */
     @Override
-    EV3MediumRegulatedMotor createMotor() {
+    EV3MediumRegulatedMotor createMotor(lejos.hardware.port.Port port) {
         try {
-            return new EV3MediumRegulatedMotor(this.getMotorType().getPort());
+            return new EV3MediumRegulatedMotor(port);
         } catch (RuntimeException e) {
             log.error("Construct steering motor: ", e);
         }
@@ -109,7 +111,8 @@ public class SteeringMotor extends Motor {
     }
 
     @Override
-    public void workOutMotorData() {
+    public void takeAction() {
+        log.debug("takeAction() ({})", steeringMotorData.getTurn());
         if (turn == steeringMotorData.getTurn()) {
             return;
         }
@@ -154,17 +157,17 @@ public class SteeringMotor extends Motor {
         rotateTillStopped(Rotation.reverse);
         resetTachoCount();
         rotateTillStopped(Rotation.ahead);
-        setLeftmostPosition(getTachoCount());
-        setHomePosition(getLeftmostPosition()/2);
-        setImproveHomePosition(0);
-        rotateTo(getHomePosition());
-        // adjust positions
-        setLeftmostPosition(getLeftmostPosition()-MOTOR_POSITION_BUFFER);
-        setRightmostPosition(MOTOR_POSITION_BUFFER);
-        if (readPropertyFile()) {
-            return;
-        }
-        writePropertyFile();
+//        setLeftmostPosition(getTachoCount());
+//        setHomePosition(getLeftmostPosition()/2);
+//        setImproveHomePosition(0);
+//        rotateTo(getHomePosition());
+//        // adjust positions
+//        setLeftmostPosition(getLeftmostPosition()-MOTOR_POSITION_BUFFER);
+//        setRightmostPosition(MOTOR_POSITION_BUFFER);
+//        if (readPropertyFile()) {
+//            return;
+//        }
+//        writePropertyFile();
     }
 
     /**

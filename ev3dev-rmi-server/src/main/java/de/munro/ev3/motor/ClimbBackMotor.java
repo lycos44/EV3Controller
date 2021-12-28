@@ -3,8 +3,10 @@ package de.munro.ev3.motor;
 import de.munro.ev3.data.ClimbBackMotorData;
 import de.munro.ev3.data.MotorData;
 import de.munro.ev3.rmi.EV3devConstants;
+import de.munro.ev3.rmi.RemoteEV3;
 import ev3dev.actuators.lego.motors.BaseRegulatedMotor;
 import ev3dev.actuators.lego.motors.EV3LargeRegulatedMotor;
+import lejos.hardware.port.MotorPort;
 import lombok.extern.slf4j.Slf4j;
 
 import static de.munro.ev3.rmi.EV3devConstants.Climb.up;
@@ -24,13 +26,13 @@ public class ClimbBackMotor extends Motor {
      * @param climbBackMotorData input data
      */
     public ClimbBackMotor(ClimbBackMotorData climbBackMotorData) {
-        super(Polarity.inversed, MotorType.climbBack);
+        super(Polarity.inversed, RemoteEV3.MotorType.liftBack, climbBackMotorData);
         this.climbBackMotorData = climbBackMotorData;
         this.climb = climbBackMotorData.getClimb();
         int attempts = 0;
         do {
             log.info("Create motor: {}", attempts);
-            this.motor = createMotor();
+            this.motor = createMotor(MotorPort.B);
         } while (null == this.motor && attempts++<2);
         if (null == this.motor) {
             log.error("Initialisation of {} failed", this.getClass().getSimpleName());
@@ -75,9 +77,9 @@ public class ClimbBackMotor extends Motor {
      * @link Motor#createMotor()
      */
     @Override
-    EV3LargeRegulatedMotor createMotor() {
+    EV3LargeRegulatedMotor createMotor(lejos.hardware.port.Port port) {
         try {
-            return new EV3LargeRegulatedMotor(this.getMotorType().getPort());
+            return new EV3LargeRegulatedMotor(port);
         } catch (RuntimeException e) {
             log.error("Construct climbBack motor", e);
         }
@@ -88,7 +90,8 @@ public class ClimbBackMotor extends Motor {
      * @link Motor#workOutMotorData()
      */
     @Override
-    public void workOutMotorData() {
+    public void takeAction() {
+        log.debug("takeAction() ({})", climbBackMotorData.getClimb());
         if (climb == climbBackMotorData.getClimb()) {
             return;
         }
@@ -129,20 +132,20 @@ public class ClimbBackMotor extends Motor {
     public void init() {
         log.debug("init()");
         // search for the home position that can be set to the tolerance position
-        setUpPosition(30);
-        setSpeed(MOTOR_SPEED_INITIAL);
-        rotateTillStopped(Rotation.reverse);
-        resetTachoCount();
-
-        rotateTillStopped(Rotation.ahead);
-        setDownPosition(this.getTachoCount()-20);
-        turn(up);
-
-        setSpeed(MOTOR_SPEED);
-        if (readPropertyFile()) {
-            return;
-        }
-        writePropertyFile();
+//        setUpPosition(30);
+//        setSpeed(MOTOR_SPEED_INITIAL);
+//        rotateTillStopped(Rotation.reverse);
+//        resetTachoCount();
+//
+//        rotateTillStopped(Rotation.ahead);
+//        setDownPosition(this.getTachoCount()-20);
+//        turn(up);
+//
+//        setSpeed(MOTOR_SPEED);
+//        if (readPropertyFile()) {
+//            return;
+//        }
+//        writePropertyFile();
     }
 
     /**

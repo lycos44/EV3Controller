@@ -34,5 +34,9 @@ public class EV3devData {
 
     public void setStopped(boolean stopped) {
         this.stopped = stopped;
+        this.getClimbFrontMotorData().setRunning(false);
+        this.getClimbBackMotorData().setRunning(false);
+        this.getDriveMotorData().setRunning(false);
+        this.getSteeringMotorData().setRunning(false);
     }
 }

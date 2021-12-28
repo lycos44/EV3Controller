@@ -9,6 +9,7 @@ import ev3dev.actuators.Sound;
 import lejos.utility.Delay;
 import lombok.extern.slf4j.Slf4j;
 
+import javax.naming.InvalidNameException;
 import java.net.MalformedURLException;
 import java.rmi.Naming;
 import java.rmi.NotBoundException;
@@ -184,81 +185,34 @@ public class EV3devRMIServer extends UnicastRemoteObject implements RemoteEV3 {
     }
 
     @Override
-    public void forward() {
-        log.debug("forward()");
-        this.getEv3devData().getDriveMotorData().setDirection(EV3devConstants.Direction.forward);
-    }
-
-    @Override
-    public void backward() {
-        log.debug("backward()");
-        this.getEv3devData().getDriveMotorData().setDirection(EV3devConstants.Direction.backward);
-    }
-
-    @Override
-    public void stop() {
-        log.debug("stop()");
-        this.getEv3devData().getDriveMotorData().setDirection(EV3devConstants.Direction.stop);
-    }
-
-    @Override
-    public void left() {
-        log.debug("left()");
-        this.getEv3devData().getSteeringMotorData().setTurn(EV3devConstants.Turn.left);
-    }
-
-    @Override
-    public void right() {
-        log.debug("right()");
-        this.getEv3devData().getSteeringMotorData().setTurn(EV3devConstants.Turn.right);
-    }
-
-    @Override
-    public void straight() {
-        log.debug("straight()");
-        this.getEv3devData().getSteeringMotorData().setTurn(EV3devConstants.Turn.straight);
-    }
-
-    @Override
-    public void frontUp() {
-        log.debug("frontUp()");
-        this.getEv3devData().getClimbFrontMotorData().setClimb(EV3devConstants.Climb.up);
-    }
-
-    @Override
-    public void frontDown() {
-        log.debug("frontDown()");
-        this.getEv3devData().getClimbFrontMotorData().setClimb(EV3devConstants.Climb.down);
-    }
-
-    @Override
-    public void backUp() {
-        log.debug("backUp()");
-        this.getEv3devData().getClimbBackMotorData().setClimb(EV3devConstants.Climb.up);
-    }
-
-    @Override
-    public void backDown() {
-        log.debug("backDown()");
-        this.getEv3devData().getClimbBackMotorData().setClimb(EV3devConstants.Climb.down);
-    }
-
-    @Override
-    public void reset() {
-        log.debug("reset()");
-//        this.getEv3devStatus().setReset(true);
-    }
-
-    @Override
-    public void test() {
-        log.debug("test()");
-//        this.getEv3devStatus().setTest(true);
-    }
-
-    @Override
     public void shutdown() {
         log.debug("shutdown()");
         this.getEv3devData().setStopped(true);
+    }
+
+    @Override
+    public void perform(MotorType motorType, Command command) throws RemoteException, InvalidNameException {
+
+    }
+
+    @Override
+    public void set(MotorType motor, Command command, Integer value) throws RemoteException, InvalidNameException {
+
+    }
+
+    @Override
+    public void read(MotorType motor) throws RemoteException, InvalidNameException {
+
+    }
+
+    @Override
+    public void write(MotorType motor) throws RemoteException, InvalidNameException {
+
+    }
+
+    @Override
+    public void show(MotorType motor) throws RemoteException, InvalidNameException {
+
     }
 
     /**

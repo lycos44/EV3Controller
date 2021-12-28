@@ -2,6 +2,7 @@ package de.munro.ev3.rmi;
 
 import lombok.extern.slf4j.Slf4j;
 
+import javax.naming.InvalidNameException;
 import java.net.MalformedURLException;
 import java.rmi.Naming;
 import java.rmi.NotBoundException;
@@ -42,6 +43,22 @@ public class RaspiRMIClient {
         log.info("Finished");
     }
 
+    /**
+     * Gets the host
+     * @return host
+     */
+    private String getHost() {
+        return host;
+    }
+
+    /**
+     * Sets the host
+     * @param host the host
+     */
+    private void setHost(String host) {
+        this.host = host;
+    }
+
     protected void readInput(RemoteEV3 remoteEV3) {
         Scanner scanner = new Scanner(System.in);
 
@@ -49,72 +66,48 @@ public class RaspiRMIClient {
 
             System.out.print("Enter something : ");
             String input = scanner.nextLine();
-            System.out.println("input : " + input);
+            InstructionDetails instructionDetails = parseCommand(input);
+            if (instructionDetails.getInstruction() == null) {
+                continue input;
+            }
+            System.out.println("input : " + instructionDetails);
 
             try {
-                switch (input) {
-                    case "q":
-                        System.out.println("quit!");
-                        break input;
-                    case "beep":
+                switch (instructionDetails.getInstruction()) {
+                    case beep:
                         System.out.println("beep");
                         remoteEV3.beep();
                         break;
-                    case "forward":
-                        System.out.println("forward");
-                        remoteEV3.forward();
+                    case perform:
+                        System.out.println(instructionDetails.getInstruction());
+                        remoteEV3.perform(instructionDetails.getMotorType(), instructionDetails.getCommand());
                         break;
-                    case "backward":
-                        System.out.println("backward");
-                        remoteEV3.backward();
+                    case set:
+                        System.out.println(instructionDetails.getInstruction());
+                        remoteEV3.set(instructionDetails.getMotorType(), instructionDetails.getCommand(), instructionDetails.getValue());
                         break;
-                    case "stop":
-                        System.out.println("stop");
-                        remoteEV3.stop();
+                    case read:
+                        System.out.println(instructionDetails.getInstruction());
+                        remoteEV3.read(instructionDetails.getMotorType());
                         break;
-                    case "left":
-                        System.out.println("left");
-                        remoteEV3.left();
+                    case write:
+                        System.out.println(instructionDetails.getInstruction());
+                        remoteEV3.write(instructionDetails.getMotorType());
                         break;
-                    case "right":
-                        System.out.println("right");
-                        remoteEV3.right();
+                    case show:
+                        System.out.println(instructionDetails.getInstruction());
+                        remoteEV3.show(instructionDetails.getMotorType());
                         break;
-                    case "straight":
-                        System.out.println("straight");
-                        remoteEV3.straight();
-                        break;
-                    case "frontup":
-                        System.out.println("frontup");
-                        remoteEV3.frontUp();
-                        break;
-                    case "frontdown":
-                        System.out.println("frontdown");
-                        remoteEV3.frontDown();
-                        break;
-                    case "backup":
-                        System.out.println("backup");
-                        remoteEV3.backUp();
-                        break;
-                    case "backdown":
-                        System.out.println("backdown");
-                        remoteEV3.backDown();
-                        break;
-                    case "reset":
-                        System.out.println("reset");
-                        remoteEV3.reset();
-                        break;
-                    case "test":
-                        System.out.println("test");
-                        remoteEV3.test();
-                        break;
-                    case "shutdown":
+                    case quit:
+                        System.out.println("quit!");
+                        break input;
+                    case shutdown:
                         System.out.println("Exit!");
                         break input;
                     default:
                         System.out.println("unknown command!");
                 }
-            } catch (RemoteException e) {
+            } catch (RemoteException | InvalidNameException e) {
                 e.printStackTrace();
             }
 
@@ -122,6 +115,17 @@ public class RaspiRMIClient {
         }
 
         scanner.close();
+    }
+
+    /**
+     * provides the arguments of the command line input
+     * @param input command line input
+     * @return arguments
+     */
+    protected InstructionDetails parseCommand(String input) {
+        String[] arguments = input.split(" ");
+
+        return new InstructionDetails(arguments);
     }
 
     private void waitUntilEV3Ready(RemoteEV3 remoteEV3, int wait4Connection) {
@@ -145,7 +149,7 @@ public class RaspiRMIClient {
                 log.debug("Build connection to EV3: {}", service);
                 remoteEV3 = (RemoteEV3) Naming.lookup(service);
             } catch (java.rmi.ConnectException e) {
-                log.debug("Build connection to EV3: ", e);
+                log.debug("Build connection to EV3: {}", e.getMessage());
             }
             if (null == remoteEV3) {
                 try {
@@ -155,14 +159,10 @@ public class RaspiRMIClient {
                 }
             }
         }
+        if (null == remoteEV3 && getHost().compareTo(LOCAL_HOST) == 0) {
+            log.debug("Build connection to EV3: using dummy connection");
+            remoteEV3 = new RemoteEV3Dummy();
+        }
         return remoteEV3;
-    }
-
-    private String getHost() {
-        return host;
-    }
-
-    private void setHost(String host) {
-        this.host = host;
     }
 }

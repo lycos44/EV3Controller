@@ -1,11 +1,15 @@
 package de.munro.ev3.motor;
 
 import de.munro.ev3.data.MotorData;
+import de.munro.ev3.rmi.RemoteEV3;
 import ev3dev.actuators.lego.motors.BaseRegulatedMotor;
+import ev3dev.actuators.lego.motors.EV3LargeRegulatedMotor;
+import ev3dev.actuators.lego.motors.EV3MediumRegulatedMotor;
 import lejos.hardware.port.MotorPort;
 import lejos.hardware.port.Port;
 import lombok.extern.slf4j.Slf4j;
 
+import javax.naming.InvalidNameException;
 import java.io.*;
 import java.util.Properties;
 
@@ -48,30 +52,33 @@ public abstract class Motor {
     }
 
     private final Polarity polarity;
-    private final MotorType motorType;
+    private final RemoteEV3.MotorType motorType;
     private Rotation rotation = Rotation.stalled;
-    private final Properties properties = new Properties();
+    private RemoteEV3.Instruction lastInstruction = null;
+    private final MotorData motorData;
 
     /**
      * Constructor
      * @param polarity the motor rotates in which direction
      * @param motorType describes what kind of motor this instance realizes
+     * @param motorData data
      */
-    public Motor(Polarity polarity, MotorType motorType) {
+    public Motor(Polarity polarity, RemoteEV3.MotorType motorType, MotorData motorData) {
         this.polarity = polarity;
         this.motorType = motorType;
+        this.motorData = motorData;
     }
 
     /**
      * react on changes in the current status
      */
-    public abstract void workOutMotorData();
+    public abstract void takeAction();
 
     /**
      * @return properties config values
      */
     public Properties getProperties() {
-        return properties;
+        return null;
     };
 
     /**
@@ -112,7 +119,7 @@ public abstract class Motor {
     /**
      * @return motorType
      */
-    public MotorType getMotorType() {
+    public RemoteEV3.MotorType getMotorType() {
         return motorType;
     }
 
@@ -149,7 +156,7 @@ public abstract class Motor {
      *
      * @return EV3MediumRegulatedMotor
      */
-    abstract BaseRegulatedMotor createMotor();
+    abstract BaseRegulatedMotor createMotor(lejos.hardware.port.Port port);
 
     /**
      * calls {@link BaseRegulatedMotor#backward()} or {@link BaseRegulatedMotor#forward()}
@@ -322,4 +329,12 @@ public abstract class Motor {
      * @return current motorData
      */
     public abstract MotorData getMotorData();
+
+    /**
+     * @link Object#toString
+     */
+    @Override
+    public String toString() {
+        return "(polarity, motorType, running): ("+polarity+", "+motorType+", "+getMotorData().isRunning()+")";
+    }
 }

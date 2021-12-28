@@ -23,15 +23,15 @@ public class MotorThread extends Thread {
     @Override
     public void run() {
         getMotor().init();
-
+        log.debug("run motor: {}", getMotor());
         while(getMotor().getMotorData().isRunning()) {
-            getMotor().logStatus();
-            getMotor().workOutMotorData();
+//            getMotor().logStatus();
+            getMotor().takeAction();
 
             Thread.yield();
         }
 
-        log.info("{} stopped", this.getClass().getSimpleName());
+        log.info("{} stopped", this.getMotor().getMotorType());
     }
 
     /**

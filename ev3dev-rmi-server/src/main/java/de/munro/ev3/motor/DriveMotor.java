@@ -2,8 +2,10 @@ package de.munro.ev3.motor;
 
 import de.munro.ev3.data.DriveMotorData;
 import de.munro.ev3.rmi.EV3devConstants;
+import de.munro.ev3.rmi.RemoteEV3;
 import ev3dev.actuators.lego.motors.BaseRegulatedMotor;
 import ev3dev.actuators.lego.motors.EV3LargeRegulatedMotor;
+import lejos.hardware.port.MotorPort;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -21,12 +23,12 @@ public class DriveMotor extends Motor {
      * @param driveMotorData data
      */
     public DriveMotor(DriveMotorData driveMotorData) {
-        super(Polarity.normal, MotorType.drive);
+        super(Polarity.normal, RemoteEV3.MotorType.drive, driveMotorData);
         this.driveMotorData = driveMotorData;
         this.direction = driveMotorData.getDirection();
         int attempts = 0;
         do {
-            this.motor = createMotor();
+            this.motor = createMotor(MotorPort.A);
         } while (null == this.motor && attempts++<2);
         if (null == this.motor) {
             log.error("Initialisation of {} failed", this.getClass().getSimpleName());
@@ -40,9 +42,9 @@ public class DriveMotor extends Motor {
      * @link Motor#createMotor()
      */
     @Override
-    EV3LargeRegulatedMotor createMotor() {
+    EV3LargeRegulatedMotor createMotor(lejos.hardware.port.Port port) {
         try {
-            return new EV3LargeRegulatedMotor(this.getMotorType().getPort());
+            return new EV3LargeRegulatedMotor(port);
         } catch (RuntimeException e) {
             log.error("Catch", e);
         }
@@ -50,7 +52,8 @@ public class DriveMotor extends Motor {
     }
 
     @Override
-    public void workOutMotorData() {
+    public void takeAction() {
+        log.debug("takeAction() ({})", driveMotorData.getDirection());
         if (direction == driveMotorData.getDirection()) {
             return;
         }
@@ -90,10 +93,10 @@ public class DriveMotor extends Motor {
     @Override
     public void init() {
         log.debug("init()");
-        if (readPropertyFile()) {
-            return;
-        }
-        writePropertyFile();
+//        if (readPropertyFile()) {
+//            return;
+//        }
+//        writePropertyFile();
     }
 
     /**
