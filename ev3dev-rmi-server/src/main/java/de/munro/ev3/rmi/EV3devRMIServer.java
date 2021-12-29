@@ -46,7 +46,7 @@ public class EV3devRMIServer extends UnicastRemoteObject implements RemoteEV3 {
         motorThreads = new ArrayList<>();
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws InvalidNameException {
         log.info("Started {}", (Object) args);
 
         try {
@@ -80,63 +80,34 @@ public class EV3devRMIServer extends UnicastRemoteObject implements RemoteEV3 {
 
         // To Stop the motor in case of pkill java for example
         Runtime.getRuntime().addShutdownHook(new Thread(ev3devRMIServer::halt));
-
-        // controlling threads
-        ev3devRMIServer.controlThreads();
-
-        try {
-            Naming.unbind(service);
-        } catch (RemoteException | NotBoundException | MalformedURLException e) {
-            log.error("RMI unbinding failed", e);
-            System.exit(EV3devConstants.SYSTEM_UNEXPECTED_ERROR);
-        }
-
-        System.exit(SYSTEM_FINISHED_SUCCESSFULLY);
-        log.info("stopped");
     }
 
     /**
      * create all threads
      */
-    private void createThreads() {
+    private void createThreads() throws InvalidNameException {
         // start sensor thread
         this.setSensorThread(this.startSensorThread(this.getEv3devData().getSensorData()));
         log.info("Sensor instances created.");
 
         // instantiate motors
-        Motor driveMotor = new DriveMotor(this.getEv3devData().getDriveMotorData());
-        Motor climbBackMotor = new ClimbBackMotor(this.getEv3devData().getClimbBackMotorData());
-        Motor climbFrontMotor = new ClimbFrontMotor(this.getEv3devData().getClimbFrontMotorData());
-        Motor steeringMotor = new SteeringMotor(this.getEv3devData().getSteeringMotorData());
+        Motor steeringMotor = new SteeringMotor(this.getEv3devData().getMotorData(MotorType.steering));
         log.info("Motor instances created.");
 
         // start motor threads
-        this.getMotorThreads().add(this.startMotorThread(climbBackMotor));
-        this.getMotorThreads().add(this.startMotorThread(climbFrontMotor));
-        this.getMotorThreads().add(this.startMotorThread(driveMotor));
         this.getMotorThreads().add(this.startMotorThread(steeringMotor));
         log.info("Threads running.");
-    }
-
-    /**
-     * check all threads for necessary updates
-     */
-    private void controlThreads() {
-        while (!getEv3devData().isStopped()) {
-            for (MotorThread motorThread : motorThreads) {
-                if (!motorThread.getMotor().getMotorData().isDone()) {
-                    notifyAll();
-                }
-            }
-            Delay.msDelay(DELAY_PERIOD_SHORT);
-        }
     }
 
     /**
      * stop all motors
      */
     private void halt() {
-        this.getEv3devData().setStopped(true);
+        log.debug("halt()");
+        synchronized (this.getEv3devData().getMotorData(MotorType.steering)) {
+            this.getEv3devData().getMotorData(MotorType.steering).setToBeStopped(true);
+            this.getEv3devData().getMotorData(MotorType.steering).notify();
+        }
     }
 
     /**
@@ -187,17 +158,42 @@ public class EV3devRMIServer extends UnicastRemoteObject implements RemoteEV3 {
     @Override
     public void shutdown() {
         log.debug("shutdown()");
-        this.getEv3devData().setStopped(true);
+
+        //RMI
+        String service = String.format("//%s/%s", this.getHost(), RemoteEV3.SERVICE_NAME);
+        log.debug("RMI unbinding: {}", service);
+        try {
+            Naming.unbind(service);
+        } catch (RemoteException | NotBoundException | MalformedURLException e) {
+            log.error("RMI unbinding failed", e);
+            System.exit(EV3devConstants.SYSTEM_UNEXPECTED_ERROR);
+        }
+
+        System.exit(SYSTEM_FINISHED_SUCCESSFULLY);
+        log.info("stopped");
     }
 
     @Override
     public void perform(MotorType motorType, Command command) throws RemoteException, InvalidNameException {
+        log.debug("perform({}, {})", motorType, command);
 
+        synchronized (this.getEv3devData().getMotorData(MotorType.steering)) {
+            this.getEv3devData().getMotorData(MotorType.steering).setInstruction(Instruction.perform);
+            this.getEv3devData().getMotorData(MotorType.steering).setCommand(command);
+            this.getEv3devData().getMotorData(MotorType.steering).notify();
+        }
     }
 
     @Override
-    public void set(MotorType motor, Command command, Integer value) throws RemoteException, InvalidNameException {
-
+    public void set(MotorType motorType, Command command, Integer value) throws RemoteException, InvalidNameException {
+        log.debug("set({}, {}, {})", motorType, command, value);
+        try {
+            synchronized (this.getEv3devData().getMotorData(MotorType.steering)) {
+                this.getEv3devData().getMotorData(MotorType.steering).setPosition(command, value);
+            }
+        } catch (InvalidNameException e) {
+            log.error("Unknown motorType: ", e);
+        }
     }
 
     @Override
@@ -211,8 +207,9 @@ public class EV3devRMIServer extends UnicastRemoteObject implements RemoteEV3 {
     }
 
     @Override
-    public void show(MotorType motor) throws RemoteException, InvalidNameException {
-
+    public void show(MotorType motorType) throws RemoteException, InvalidNameException {
+        log.debug("show({})", motorType);
+        log.debug(motorType + "" + this.getEv3devData().getMotorData(motorType));
     }
 
     /**
@@ -230,14 +227,16 @@ public class EV3devRMIServer extends UnicastRemoteObject implements RemoteEV3 {
     }
 
     /**
-     * @return current motorThreads
+     * Gets the motorThreads
+     * @return motorThreads
      */
     public List<MotorThread> getMotorThreads() {
         return motorThreads;
     }
 
     /**
-     * @return current ev3devData
+     * Gets the ev3devData
+     * @return ev3devData
      */
     public EV3devData getEv3devData() {
         return ev3devData;

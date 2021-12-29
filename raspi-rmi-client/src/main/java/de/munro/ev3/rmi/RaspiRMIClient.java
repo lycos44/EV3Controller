@@ -38,7 +38,7 @@ public class RaspiRMIClient {
         }
         catch (Exception e)
         {
-            log.error("Exception: ", e);
+//            log.error("Exception: ", e);
         }
         log.info("Finished");
     }

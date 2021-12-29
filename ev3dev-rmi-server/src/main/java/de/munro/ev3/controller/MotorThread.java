@@ -1,6 +1,7 @@
 package de.munro.ev3.controller;
 
 import de.munro.ev3.motor.Motor;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -20,15 +21,20 @@ public class MotorThread extends Thread {
     /**
      * @link Thread#run()
      */
+    @SneakyThrows
     @Override
     public void run() {
         getMotor().init();
         log.debug("run motor: {}", getMotor());
-        while(getMotor().getMotorData().isRunning()) {
-//            getMotor().logStatus();
-            getMotor().takeAction();
 
-            Thread.yield();
+        action: while(true) {
+            synchronized (getMotor().getMotorData()) {
+                getMotor().getMotorData().wait();
+                if (getMotor().getMotorData().isToBeStopped()) {
+                    break action;
+                }
+                getMotor().takeAction();
+            }
         }
 
         log.info("{} stopped", this.getMotor().getMotorType());

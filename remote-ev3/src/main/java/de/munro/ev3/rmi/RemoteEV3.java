@@ -40,7 +40,7 @@ public interface RemoteEV3 extends Remote
     boolean isInitialized() throws RemoteException;
 
     void beep() throws RemoteException;
-    void shutdown() throws RemoteException;
+    void shutdown() throws RemoteException, InvalidNameException;
 
     void perform(MotorType motorType, Command command) throws RemoteException, InvalidNameException;
 

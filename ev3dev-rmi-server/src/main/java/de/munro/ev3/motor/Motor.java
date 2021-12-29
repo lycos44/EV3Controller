@@ -15,13 +15,6 @@ import java.util.Properties;
 
 @Slf4j
 public abstract class Motor {
-    
-    protected static final String DOWN_POSITION = "downPosition";
-    protected static final String UP_POSITION = "upPosition";
-    protected static final String LEFTMOST_POSITION = "leftmostPosition";
-    protected static final String RIGHTMOST_POSITION = "rightmostPosition";
-    protected static final String HOME_POSITION = "homePosition";
-    protected static final String IMPROVE_HOME_POSITION = "improveHomePosition";
 
     public enum Rotation {
         ahead,
@@ -34,25 +27,9 @@ public abstract class Motor {
         inversed
     }
 
-    public enum MotorType {
-        drive(MotorPort.A),
-        climbBack(MotorPort.B),
-        steering(MotorPort.C),
-        climbFront(MotorPort.D);
-
-        private final Port port;
-
-        MotorType(Port port) {
-            this.port = port;
-        }
-
-        public Port getPort() {
-            return port;
-        }
-    }
-
     private final Polarity polarity;
     private final RemoteEV3.MotorType motorType;
+    private boolean running;
     private Rotation rotation = Rotation.stalled;
     private RemoteEV3.Instruction lastInstruction = null;
     private final MotorData motorData;
@@ -66,20 +43,87 @@ public abstract class Motor {
     public Motor(Polarity polarity, RemoteEV3.MotorType motorType, MotorData motorData) {
         this.polarity = polarity;
         this.motorType = motorType;
+        this.running = false;
         this.motorData = motorData;
+    }
+
+    public boolean isRunning() {
+        return running;
+    }
+
+    public void setRunning(boolean running) {
+        this.running = running;
+    }
+
+    /**
+     * Gets the motorData
+     * @return motorData
+     */
+    public MotorData getMotorData() {
+        return motorData;
+    }
+
+    /**
+     * Get the motor port
+     * @param motorType current motor type
+     * @return port
+     * @throws InvalidNameException unknown motor type
+     */
+    public Port getPort(RemoteEV3.MotorType motorType) throws InvalidNameException {
+        switch (motorType) {
+            case drive:
+                return MotorPort.A;
+            case liftBack:
+                return MotorPort.B;
+            case steering:
+                return MotorPort.C;
+            case liftFront:
+                return MotorPort.D;
+        }
+        throw new InvalidNameException("Unknown motorType: " + motorType);
     }
 
     /**
      * react on changes in the current status
      */
-    public abstract void takeAction();
+    public void takeAction() {
+        if (lastInstruction != getMotorData().getInstruction()) {
+            log.debug("takeAction: {}", getMotorData().getInstruction());
+            lastInstruction = getMotorData().getInstruction();
+        }
+
+        try {
+            switch (getMotorData().getInstruction()) {
+                case perform:
+                    rotate(getMotorData().getCommand());
+                    break;
+//                case read:
+//                    properties = readPropertyFile();
+//                    if (getMotorData().verify(properties)) {
+//                        getMotorData().setPositions(properties);
+//                        log.debug(getMotorData().toString());
+//                    }
+//                    break;
+//                case write:
+//                    properties = getMotorData().getProperties();
+//                    if (getMotorData().verify(properties)) {
+//                        log.debug(properties.toString());
+//                        writePropertyFile(properties);
+            }
+//            }
+//            getMotorData().setDone(true);
+//        }
+        } catch (InvalidNameException e) {
+            log.error("Unknown Instruction: ", e);
+        }
+    }
 
     /**
-     * @return properties config values
+     * execute rotation of the motor
+     * @param command instruction for the motor
+     * @throws InvalidNameException unknown command
      */
-    public Properties getProperties() {
-        return null;
-    };
+    protected abstract void rotate(RemoteEV3.Command command) throws InvalidNameException;
 
     /**
      * motor is ready to do his job
@@ -94,22 +138,25 @@ public abstract class Motor {
      * @link BaseRegulatedMotor#getSpeed()
      */
     public int getSpeed() {
-        return getMotor().getSpeed();
+        return getMotorData().getSpeed();
     }
 
     /**
      * @link BaseRegulatedMotor#setSpeed()
      */
     public void setSpeed(int speed) {
+        getMotorData().setSpeed(speed);
         getMotor().setSpeed(speed);
     }
 
     /**
+     * Get the motor
      * @return motor
      */
     abstract BaseRegulatedMotor getMotor();
 
     /**
+     * Set the polarity
      * @return polarity
      */
     public Polarity getPolarity() {
@@ -117,6 +164,7 @@ public abstract class Motor {
     }
 
     /**
+     * Set the motorType
      * @return motorType
      */
     public RemoteEV3.MotorType getMotorType() {
@@ -124,6 +172,7 @@ public abstract class Motor {
     }
 
     /**
+     * Get the rotation
      * @return motorType
      */
     public Rotation getRotation() {
@@ -131,18 +180,12 @@ public abstract class Motor {
     }
 
     /**
+     * Sets the rotation
      * @param rotation direction the motor rotates
      */
     public void setRotation(Rotation rotation) {
         this.rotation = rotation;
     }
-
-    /**
-     * provides information about the status of the motor
-     *
-     * @return true, if the motor has to be stopped
-     */
-    abstract boolean is2BeStopped();
 
     /**
      * @link BaseRegulatedMotor#isStalled()
@@ -153,10 +196,25 @@ public abstract class Motor {
 
     /**
      * create a new motor instance
-     *
-     * @return EV3MediumRegulatedMotor
+     * @return BaseRegulatedMotor
      */
-    abstract BaseRegulatedMotor createMotor(lejos.hardware.port.Port port);
+    BaseRegulatedMotor createMotor() throws InvalidNameException {
+        log.debug("createMotor: {},{}", this.getMotorType(), this.getPort(this.getMotorType()));
+        try {
+            switch (this.getMotorType()) {
+                case steering:
+                case liftFront:
+                    return new EV3MediumRegulatedMotor(this.getPort(this.getMotorType()));
+                case drive:
+                case liftBack:
+                    return new EV3LargeRegulatedMotor(this.getPort(this.getMotorType()));
+            }
+        } catch (RuntimeException e) {
+            log.error("Create motor: ", e);
+        }
+
+        return null;
+    }
 
     /**
      * calls {@link BaseRegulatedMotor#backward()} or {@link BaseRegulatedMotor#forward()}
@@ -213,7 +271,7 @@ public abstract class Motor {
             case reverse:
                 backward();
         }
-        while (!is2BeStopped()) {
+        while (!isStalled()) {
         }
         setRotation(rotation);
         stop();
@@ -264,46 +322,42 @@ public abstract class Motor {
     public abstract void init();
 
     /**
-     * check whether all necessary properties could be read
-     */
-    public abstract boolean verifyProperties();
-
-    /**
      * build the properties filename
-     * @param clazz classname of the current instance
      * @return properties filename
      */
-    private String getPropertiesFilename(Class clazz) {
-        return "config/"+clazz.getSimpleName() + ".properties";
+    private String getPropertiesFilename() {
+        return "config/" + this.getMotorType() + ".properties";
     }
 
     /**
-     * read status information of the motor to the property file
+     * read motor properties from property file
+     * @return properties
      */
-    public boolean readPropertyFile() {
+    public Properties readPropertyFile() {
         log.debug("readPropertyFile()");
-        try (InputStream inputStream = new FileInputStream(getPropertiesFilename(this.getClass()))) {
+        Properties properties = new Properties();
+        String propertiesFilename = getPropertiesFilename();
+        log.debug("propertiesFilename: {}", propertiesFilename);
+        try (InputStream inputStream = new FileInputStream(propertiesFilename)) {
 
-            getProperties().load(inputStream);
-            log.debug("properties({})", getProperties());
+            properties.load(inputStream);
+            log.debug("properties({})", properties);
 
-        } catch (FileNotFoundException e) {
-            return false;
         } catch (IOException e) {
-            return false;
+            return null;
         }
-        return verifyProperties();
+        return properties;
     }
 
     /**
      * write status information of the motor to the property file
      */
-    public void writePropertyFile() {
-        File propertiesFile = new File(getPropertiesFilename(this.getClass()));
+    public void writePropertyFile(Properties properties) {
+        File propertiesFile = new File(getPropertiesFilename());
         propertiesFile.getParentFile().mkdirs();
         try (OutputStream outputStream = new FileOutputStream(propertiesFile)) {
 
-            getProperties().store(outputStream, null);
+            properties.store(outputStream, null);
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -320,21 +374,15 @@ public abstract class Motor {
     }
 
     /**
-     * concat all info interesting for logging
-     * @return message to be logged
-     */
-    public abstract void logStatus();
-
-    /**
-     * @return current motorData
-     */
-    public abstract MotorData getMotorData();
-
-    /**
      * @link Object#toString
      */
     @Override
     public String toString() {
-        return "(polarity, motorType, running): ("+polarity+", "+motorType+", "+getMotorData().isRunning()+")";
+        return "{\n" +
+            "\tpolarity: " + polarity + "\n" +
+            "\tmotorType: " + motorType + "\n" +
+            "\trunning: " + running + "\n" +
+            "\tmotorData: " + motorData + "\n" +
+            "}\n";
     }
 }
