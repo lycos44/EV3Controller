@@ -9,12 +9,7 @@ import static de.munro.ev3.motor.Motor.Polarity.inversed;
 import static de.munro.ev3.motor.Motor.Polarity.normal;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.anyInt;
-import static org.mockito.Mockito.doCallRealMethod;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 public class MotorTest {
 
@@ -38,7 +33,7 @@ public class MotorTest {
         when(motor.getMotor()).thenReturn(regulatedMotor);
         when(regulatedMotor.isStalled()).thenReturn(true);
 
-        assertThat(motor.isStalled(), is(true));
+        MatcherAssert.assertThat(motor.isStalled(), is(true));
 
         verify(motor).getMotor();
         verify(regulatedMotor).isStalled();
@@ -141,15 +136,15 @@ public class MotorTest {
     @Test
     public void rotateTo() {
         Motor motor = Mockito.mock(Motor.class);
-//        doCallRealMethod().when(motor).rotateTo(anyInt());
-//        BaseRegulatedMotor regulatedMotor = Mockito.mock(BaseRegulatedMotor.class);
-//        when(motor.getMotor()).thenReturn(regulatedMotor);
-//
-//        int angle = 90;
-//        motor.rotateTo(angle);
-//
-//        verify(motor).getMotor();
-//        verify(regulatedMotor).rotateTo(angle);
+        doCallRealMethod().when(motor).rotateTo(anyInt());
+        BaseRegulatedMotor regulatedMotor = Mockito.mock(BaseRegulatedMotor.class);
+        when(motor.getMotor()).thenReturn(regulatedMotor);
+
+        int angle = 90;
+        motor.rotateTo(angle);
+
+        verify(motor).getMotor();
+        verify(regulatedMotor).rotateTo(angle);
     }
 
     @Test
@@ -160,7 +155,7 @@ public class MotorTest {
         when(motor.getMotor()).thenReturn(regulatedMotor);
         when(regulatedMotor.getTachoCount()).thenReturn(123);
 
-        assertThat(motor.getTachoCount(), is(123));
+        MatcherAssert.assertThat(motor.getTachoCount(), is(123));
 
         verify(motor).getMotor();
         verify(regulatedMotor).getTachoCount();

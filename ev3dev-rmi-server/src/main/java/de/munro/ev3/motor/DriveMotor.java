@@ -4,20 +4,23 @@ import de.munro.ev3.data.MotorData;
 import de.munro.ev3.rmi.EV3devConstants;
 import de.munro.ev3.rmi.RemoteEV3;
 import ev3dev.actuators.lego.motors.BaseRegulatedMotor;
-import ev3dev.actuators.lego.motors.EV3MediumRegulatedMotor;
+import ev3dev.actuators.lego.motors.EV3LargeRegulatedMotor;
 import lombok.extern.slf4j.Slf4j;
 
+import javax.naming.InvalidNameException;
+
 @Slf4j
-public class SteeringMotor extends Motor {
+public class DriveMotor extends Motor {
 
     private BaseRegulatedMotor motor;
 
     /**
      * Constructor
-     * @param motorData motor data
+     *
+     * @param motorData model
      */
-    public SteeringMotor(MotorData motorData) {
-        super(Polarity.normal, RemoteEV3.MotorType.steering, motorData);
+    public DriveMotor(MotorData motorData) {
+        super(Polarity.normal, RemoteEV3.MotorType.drive, motorData);
         int attempts = 0;
         do {
             this.motor = createMotor();
@@ -27,7 +30,21 @@ public class SteeringMotor extends Motor {
             System.exit(EV3devConstants.SYSTEM_UNEXPECTED_ERROR);
         }
         this.motor.setSpeed(getMotorData().getSpeed());
+    }
 
+    @Override
+    protected void rotate(RemoteEV3.Command cmd) {
+        log.debug("rotate: {}, {}", cmd, getMotorData().getPosition(cmd));
+        switch (cmd) {
+            case forward:
+                this.forward();
+                break;
+            case backward:
+                this.backward();
+                break;
+            case stop:
+                this.stop();
+        }
     }
 
     /**
@@ -43,7 +60,7 @@ public class SteeringMotor extends Motor {
      */
     @Override
     BaseRegulatedMotor createMotor() {
-        return new EV3MediumRegulatedMotor(this.getMotorPort(this.getMotorType()));
+        return new EV3LargeRegulatedMotor(this.getMotorPort(this.getMotorType()));
     }
 
     /**
@@ -52,21 +69,15 @@ public class SteeringMotor extends Motor {
     @Override
     public void init() {
         log.debug("init()");
-        rotateTillStopped(Rotation.ahead);//left
-        resetTachoCount();
-        int left = getTachoCount();
-        log.debug("left: {}", left);
-        rotateTillStopped(Rotation.reverse);//right
-        int right = getTachoCount();
-        log.debug("right: {}", right);
-        int home = left+right/2;
-        log.debug("home: {}", home);
-
-        getMotorData().setPosition(RemoteEV3.Command.left, left);
-        getMotorData().setPosition(RemoteEV3.Command.right, right);
-        getMotorData().setPosition(RemoteEV3.Command.home, home);
-
-        rotate(RemoteEV3.Command.home);
         log.debug(getMotorData().toString());
+    }
+
+    /**
+     * @link Motor#stop()
+     */
+    @Override
+    public void stop() {
+        super.stop();
+        getMotor().setSpeed(EV3devConstants.DRIVE_MOTOR_SPEED_NORMAL);
     }
 }

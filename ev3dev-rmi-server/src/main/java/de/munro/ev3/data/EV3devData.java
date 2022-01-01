@@ -3,14 +3,13 @@ package de.munro.ev3.data;
 import de.munro.ev3.rmi.EV3devConstants;
 import de.munro.ev3.rmi.RemoteEV3;
 
-import javax.naming.InvalidNameException;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class EV3devData {
    private final SensorData sensorData = new SensorData();
 
-    private Map<RemoteEV3.MotorType, MotorData> motorDates = new HashMap<>();
+    private Map<RemoteEV3.MotorType, MotorData> motorDates = new ConcurrentHashMap<>();
 
     public EV3devData() {
         motorDates.put(RemoteEV3.MotorType.liftBack, new MotorData(

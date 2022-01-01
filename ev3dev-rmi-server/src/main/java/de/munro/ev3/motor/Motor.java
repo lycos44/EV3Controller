@@ -9,9 +9,10 @@ import lejos.hardware.port.MotorPort;
 import lejos.hardware.port.Port;
 import lombok.extern.slf4j.Slf4j;
 
-import javax.naming.InvalidNameException;
 import java.io.*;
+import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Slf4j
 public abstract class Motor {
@@ -29,10 +30,10 @@ public abstract class Motor {
 
     private final Polarity polarity;
     private final RemoteEV3.MotorType motorType;
-    private boolean running;
     private Rotation rotation = Rotation.stalled;
     private RemoteEV3.Instruction lastInstruction = null;
     private final MotorData motorData;
+    private final Map<RemoteEV3.MotorType, Port> motorPorts = new ConcurrentHashMap<RemoteEV3.MotorType, Port>();
 
     /**
      * Constructor
@@ -43,16 +44,14 @@ public abstract class Motor {
     public Motor(Polarity polarity, RemoteEV3.MotorType motorType, MotorData motorData) {
         this.polarity = polarity;
         this.motorType = motorType;
-        this.running = false;
         this.motorData = motorData;
-    }
 
-    public boolean isRunning() {
-        return running;
-    }
+        motorPorts.put(RemoteEV3.MotorType.drive, MotorPort.A);
+        motorPorts.put(RemoteEV3.MotorType.liftBack, MotorPort.B);
+        motorPorts.put(RemoteEV3.MotorType.steering, MotorPort.C);
+        motorPorts.put(RemoteEV3.MotorType.liftFront, MotorPort.D);
 
-    public void setRunning(boolean running) {
-        this.running = running;
+        motorData.setMotorStatus(MotorData.MotorStatus.prepared);
     }
 
     /**
@@ -64,27 +63,7 @@ public abstract class Motor {
     }
 
     /**
-     * Get the motor port
-     * @param motorType current motor type
-     * @return port
-     * @throws InvalidNameException unknown motor type
-     */
-    public Port getPort(RemoteEV3.MotorType motorType) throws InvalidNameException {
-        switch (motorType) {
-            case drive:
-                return MotorPort.A;
-            case liftBack:
-                return MotorPort.B;
-            case steering:
-                return MotorPort.C;
-            case liftFront:
-                return MotorPort.D;
-        }
-        throw new InvalidNameException("Unknown motorType: " + motorType);
-    }
-
-    /**
-     * react on changes in the current status
+     * react on action requests
      */
     public void takeAction() {
         if (lastInstruction != getMotorData().getInstruction()) {
@@ -92,38 +71,45 @@ public abstract class Motor {
             lastInstruction = getMotorData().getInstruction();
         }
 
-        try {
-            switch (getMotorData().getInstruction()) {
-                case perform:
-                    rotate(getMotorData().getCommand());
-                    break;
-//                case read:
-//                    properties = readPropertyFile();
-//                    if (getMotorData().verify(properties)) {
-//                        getMotorData().setPositions(properties);
-//                        log.debug(getMotorData().toString());
-//                    }
-//                    break;
-//                case write:
-//                    properties = getMotorData().getProperties();
-//                    if (getMotorData().verify(properties)) {
-//                        log.debug(properties.toString());
-//                        writePropertyFile(properties);
-            }
-//            }
-//            getMotorData().setDone(true);
-//        }
-        } catch (InvalidNameException e) {
-            log.error("Unknown Instruction: ", e);
+        Properties properties;
+        switch (getMotorData().getInstruction()) {
+            case perform:
+                rotate(getMotorData().getCommand());
+                break;
+            case read:
+                properties = readPropertyFile();
+                if (getMotorData().verify(properties)) {
+                    getMotorData().setPositions(properties);
+                    log.debug(getMotorData().toString());
+                }
+                break;
+            case write:
+                properties = getMotorData().getProperties();
+                if (getMotorData().verify(properties)) {
+                    log.debug(properties.toString());
+                    writePropertyFile(properties);
+                }
+                break;
         }
     }
 
     /**
-     * execute rotation of the motor
-     * @param command instruction for the motor
-     * @throws InvalidNameException unknown command
+     * Gets the motor port
+     * @param motorType motor type
+     * @return port
      */
-    protected abstract void rotate(RemoteEV3.Command command) throws InvalidNameException;
+    public Port getMotorPort(RemoteEV3.MotorType motorType) {
+        return motorPorts.get(motorType);
+    }
+
+    /**
+     * execute rotation of the motor
+     * @param cmd instruction for the motor
+     */
+    protected void rotate(RemoteEV3.Command cmd) {
+        log.debug("rotate: {}, {}", cmd, getMotorData().getPosition(cmd));
+        rotateTo(getMotorData().getPosition(cmd));
+    }
 
     /**
      * motor is ready to do his job
@@ -198,23 +184,24 @@ public abstract class Motor {
      * create a new motor instance
      * @return BaseRegulatedMotor
      */
-    BaseRegulatedMotor createMotor() throws InvalidNameException {
-        log.debug("createMotor: {},{}", this.getMotorType(), this.getPort(this.getMotorType()));
-        try {
-            switch (this.getMotorType()) {
-                case steering:
-                case liftFront:
-                    return new EV3MediumRegulatedMotor(this.getPort(this.getMotorType()));
-                case drive:
-                case liftBack:
-                    return new EV3LargeRegulatedMotor(this.getPort(this.getMotorType()));
-            }
-        } catch (RuntimeException e) {
-            log.error("Create motor: ", e);
-        }
-
-        return null;
-    }
+    abstract BaseRegulatedMotor createMotor();
+//    {
+//        log.debug("createMotor: {},{}", this.getMotorType(), this.getMotorPort(this.getMotorType()));
+//        try {
+//            switch (this.getMotorType()) {
+//                case steering:
+//                case liftFront:
+//                    return new EV3MediumRegulatedMotor(this.getMotorPort(this.getMotorType()));
+//                case drive:
+//                case liftBack:
+//                    return new EV3LargeRegulatedMotor(this.getMotorPort(this.getMotorType()));
+//            }
+//        } catch (RuntimeException e) {
+//            log.error("Create motor: ", e);
+//        }
+//
+//        return null;
+//    }
 
     /**
      * calls {@link BaseRegulatedMotor#backward()} or {@link BaseRegulatedMotor#forward()}
@@ -381,7 +368,6 @@ public abstract class Motor {
         return "{\n" +
             "\tpolarity: " + polarity + "\n" +
             "\tmotorType: " + motorType + "\n" +
-            "\trunning: " + running + "\n" +
             "\tmotorData: " + motorData + "\n" +
             "}\n";
     }

@@ -3,46 +3,25 @@ package de.munro.ev3.data;
 import de.munro.ev3.rmi.RemoteEV3;
 import lombok.extern.slf4j.Slf4j;
 
-import javax.naming.InvalidNameException;
-import java.util.*;
+import java.util.Map;
+import java.util.Properties;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Slf4j
 public class MotorData {
-    private boolean toBeStopped = false;
+
+    public enum MotorStatus {
+        prepared,
+        running,
+        toBeStopped,
+        stopped
+    }
+
+    private MotorStatus motorStatus;
     private Integer speed;
     private RemoteEV3.Command command;
     private RemoteEV3.Instruction instruction;
-    private final Position[] positions;
-
-    /**
-     * inner class Position
-     */
-    private static class Position {
-        private RemoteEV3.Command command;
-        private Integer value;
-
-        private Position(RemoteEV3.Command command, Integer value) {
-            this.command = command;
-            this.value = value;
-        }
-
-        public RemoteEV3.Command getCommand() {
-            return command;
-        }
-
-        public Integer getValue() {
-            return value;
-        }
-
-        public void setValue(Integer value) {
-            this.value = value;
-        }
-
-        @Override
-        public String toString() {
-            return "("+command+","+value+")";
-        }
-    }
+    private final Map<RemoteEV3.Command, Integer> positions;
 
     /**
      * Constructor
@@ -51,26 +30,27 @@ public class MotorData {
      */
     public MotorData(RemoteEV3.Command[] commands, int speed) {
         this.speed = speed;
-        this.positions = new Position[commands.length];
-        for (int i = 0;i<commands.length;i++) {
-            this.positions[i] = new Position(commands[i], 0);
+        this.positions = new ConcurrentHashMap<>();
+
+        for (RemoteEV3.Command command : commands) {
+            positions.put(command, 0);
         }
     }
 
     /**
-     * Gets the isToBeStopped
-     * @return isToBeStopped
+     * Gets the motor status
+     * @return motorStatus
      */
-    public boolean isToBeStopped() {
-        return toBeStopped;
+    public MotorStatus getMotorStatus() {
+        return motorStatus;
     }
 
     /**
-     * Sets the toBeStopped
-     * @param toBeStopped
+     * Sets the motor status
+     * @param motorStatus motor status
      */
-    public void setToBeStopped(boolean toBeStopped) {
-        this.toBeStopped = toBeStopped;
+    public void setMotorStatus(MotorStatus motorStatus) {
+        this.motorStatus = motorStatus;
     }
 
     /**
@@ -126,16 +106,8 @@ public class MotorData {
      * @param cmd command
      * @return value of cmd position
      */
-    public Integer getPosition(RemoteEV3.Command cmd) throws InvalidNameException {
-        for (Position pos : positions) {
-            if (pos.getCommand() == cmd) {
-                return pos.getValue();
-            }
-        }
-
-        InvalidNameException invalidNameException = new InvalidNameException("Unknown command: " + cmd);
-        invalidNameException.printStackTrace();
-        throw invalidNameException;
+    public Integer getPosition(RemoteEV3.Command cmd) {
+        return positions.get(cmd);
     }
 
     /**
@@ -143,17 +115,14 @@ public class MotorData {
      * @param cmd command
      * @param value value
      */
-    public void setPosition(RemoteEV3.Command cmd, Integer value) throws InvalidNameException {
-        for (Position pos : positions) {
-            if (pos.getCommand() == cmd) {
-                pos.setValue(value);
-                return;
-            }
-        }
+    public void setPosition(RemoteEV3.Command cmd, Integer value) {
+        positions.replace(cmd, value);
+    }
 
-        InvalidNameException invalidNameException = new InvalidNameException("Unknown command: " + cmd);
-        invalidNameException.printStackTrace();
-        throw invalidNameException;
+    /**
+     * writes current settings to property file
+     */
+    public void write() {
     }
 
     /**
@@ -161,10 +130,9 @@ public class MotorData {
      * @param properties properties
      */
     public void setPositions(Properties properties) {
-        for (Position pos : positions) {
-            Integer value = Integer.parseInt(properties.get(pos.getCommand().toString()).toString());
-            pos.setValue(value);
-            log.debug("setPositions: {},{}", pos.getCommand(), pos.getValue());
+        for (RemoteEV3.Command cmd : positions.keySet()) {
+            Integer value = Integer.parseInt(properties.get(cmd.toString()).toString());
+            positions.replace(cmd, value);
         }
     }
 
@@ -172,7 +140,7 @@ public class MotorData {
      * Gets the positions
      * @return positions
      */
-    public Position[] getPositions() {
+    public Map<RemoteEV3.Command, Integer> getPositions() {
         return positions;
     }
 
@@ -180,11 +148,11 @@ public class MotorData {
      * Gets the properties
      * @return properties
      */
-    public Properties getProperties() throws InvalidNameException {
+    public Properties getProperties() {
         Properties properties = new Properties();
-        for (Position pos : getPositions()) {
-            log.debug("getPositions: {},{}", pos.getCommand(), pos.getValue());
-            properties.put(pos.getCommand().toString(), pos.getValue().toString());
+        for (RemoteEV3.Command cmd : getPositions().keySet()) {
+            log.debug("getPositions: {},{}", cmd, positions.get(cmd));
+            properties.put(cmd.toString(), positions.get(cmd).toString());
         }
         return properties;
     }
@@ -195,8 +163,8 @@ public class MotorData {
      * @return true, if all properties are set
      */
     public boolean verify(Properties properties) {
-        for (Position position : getPositions()) {
-            if (properties.get(position.getValue().toString()) == null) {
+        for (RemoteEV3.Command cmd : getPositions().keySet()) {
+            if (properties.get(cmd.toString()) == null) {
                 return false;
             }
         }
@@ -209,12 +177,12 @@ public class MotorData {
     @Override
     public String toString() {
         String posStr = "[";
-        for (Position pos : positions) {
-            posStr += ","+pos.toString();
+        for (RemoteEV3.Command cmd : positions.keySet()) {
+            posStr += ", ("+cmd+","+positions.get(cmd)+")";
         }
         posStr = posStr.replaceFirst(",","") +"]";
         return "{" + "\n" +
-                "\ttoBeStopped: " + toBeStopped + "\n" +
+                "\tmotorStatus: " + motorStatus + "\n" +
                 "\tcommand:     " + command + "\n" +
                 "\tspeed        " + speed + "\n" +
                 "\tpositions:   " + posStr + "\n" +
