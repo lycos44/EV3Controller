@@ -14,7 +14,7 @@ apply plugin: "org.hidetake.ssh"
 
 allprojects {
     group = 'de.munro'
-    version = '01.01.08-SNAPSHOT'
+    version = '01.01.08'
 
     apply plugin: 'java'
     apply plugin: 'idea'
