@@ -1,33 +1,26 @@
 package de.munro.ev3.motor;
 
+import de.munro.ev3.data.MotorData;
+import de.munro.ev3.rmi.RemoteEV3;
 import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
-import java.util.Properties;
-
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.doCallRealMethod;
 import static org.mockito.Mockito.when;
 
 public class DriveMotorTest {
 
     @Test
-    public void is2BeStopped() {
+    public void init() {
         DriveMotor driveMotor = Mockito.mock(DriveMotor.class);
-        doCallRealMethod().when(driveMotor).is2BeStopped();
+        MotorData motorData = new MotorData(new RemoteEV3.Command[]{}, 10);
+        when(driveMotor.getMotorData()).thenReturn(motorData);
+        doCallRealMethod().when(driveMotor).init();
 
-        MatcherAssert.assertThat(driveMotor.is2BeStopped(), is(false));
-    }
+        driveMotor.init();
 
-    @Test
-    public void verifyProperties() {
-        DriveMotor driveMotor = Mockito.mock(DriveMotor.class);
-        doCallRealMethod().when(driveMotor).verifyProperties();
-        Properties properties = new Properties();
-        when(driveMotor.getProperties()).thenReturn(properties);
-
-        assertThat(driveMotor.verifyProperties(), is(true));
+        MatcherAssert.assertThat(driveMotor.getMotorData().getPositions().keySet().size(), is(0));
     }
 }

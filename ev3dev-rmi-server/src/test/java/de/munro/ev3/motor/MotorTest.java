@@ -9,12 +9,7 @@ import static de.munro.ev3.motor.Motor.Polarity.inversed;
 import static de.munro.ev3.motor.Motor.Polarity.normal;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.anyInt;
-import static org.mockito.Mockito.doCallRealMethod;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 public class MotorTest {
 
@@ -38,7 +33,7 @@ public class MotorTest {
         when(motor.getMotor()).thenReturn(regulatedMotor);
         when(regulatedMotor.isStalled()).thenReturn(true);
 
-        assertThat(motor.isStalled(), is(true));
+        MatcherAssert.assertThat(motor.isStalled(), is(true));
 
         verify(motor).getMotor();
         verify(regulatedMotor).isStalled();
@@ -102,14 +97,14 @@ public class MotorTest {
         doCallRealMethod().when(motor).rotateTillStopped(any());
         doCallRealMethod().when(motor).setRotation(any());
         doCallRealMethod().when(motor).getRotation();
-        when(motor.is2BeStopped()).thenReturn(false).thenReturn(false).thenReturn(true);
+        when(motor.isStalled()).thenReturn(false).thenReturn(false).thenReturn(true);
         motor.setRotation(Motor.Rotation.stalled);
 
         motor.rotateTillStopped(Motor.Rotation.ahead);
 
         MatcherAssert.assertThat(motor.getRotation(), is(Motor.Rotation.ahead));
         verify(motor).forward();
-        verify(motor, times(3)).is2BeStopped();
+        verify(motor, times(3)).isStalled();
     }
 
     @Test
@@ -160,7 +155,7 @@ public class MotorTest {
         when(motor.getMotor()).thenReturn(regulatedMotor);
         when(regulatedMotor.getTachoCount()).thenReturn(123);
 
-        assertThat(motor.getTachoCount(), is(123));
+        MatcherAssert.assertThat(motor.getTachoCount(), is(123));
 
         verify(motor).getMotor();
         verify(regulatedMotor).getTachoCount();

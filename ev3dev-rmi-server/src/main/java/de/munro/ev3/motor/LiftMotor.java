@@ -5,24 +5,28 @@ import de.munro.ev3.rmi.EV3devConstants;
 import de.munro.ev3.rmi.RemoteEV3;
 import ev3dev.actuators.lego.motors.BaseRegulatedMotor;
 import ev3dev.actuators.lego.motors.EV3LargeRegulatedMotor;
+import ev3dev.actuators.lego.motors.EV3MediumRegulatedMotor;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.naming.InvalidNameException;
+import java.util.Properties;
 
 @Slf4j
-public class DriveMotor extends Motor {
+public class LiftMotor extends Motor {
 
     private BaseRegulatedMotor motor;
 
     /**
      * Constructor
-     *
+     * @param polarity Polarity
+     * @param motorType type of the motor
      * @param motorData model
      */
-    public DriveMotor(MotorData motorData) {
-        super(Polarity.normal, RemoteEV3.MotorType.drive, motorData);
+    public LiftMotor(Polarity polarity, RemoteEV3.MotorType motorType, MotorData motorData) {
+        super(polarity, motorType, motorData);
         int attempts = 0;
         do {
+            log.info("Create motor: {}", attempts);
             this.motor = createMotor();
         } while (null == this.motor && attempts++<2);
         if (null == this.motor) {
@@ -30,21 +34,6 @@ public class DriveMotor extends Motor {
             System.exit(EV3devConstants.SYSTEM_UNEXPECTED_ERROR);
         }
         this.motor.setSpeed(getMotorData().getSpeed());
-    }
-
-    @Override
-    protected void rotate(RemoteEV3.Command cmd) {
-        log.debug("rotate: {}, {}", cmd, getMotorData().getPosition(cmd));
-        switch (cmd) {
-            case forward:
-                this.forward();
-                break;
-            case backward:
-                this.backward();
-                break;
-            case stop:
-                this.stop();
-        }
     }
 
     /**
@@ -60,7 +49,12 @@ public class DriveMotor extends Motor {
      */
     @Override
     BaseRegulatedMotor createMotor() {
-        return new EV3LargeRegulatedMotor(this.getMotorPort(this.getMotorType()));
+        if (getMotorType() == RemoteEV3.MotorType.liftFront) {
+            return new EV3MediumRegulatedMotor(this.getMotorPort(this.getMotorType()));
+        } else if (getMotorType() == RemoteEV3.MotorType.liftBack) {
+            return new EV3LargeRegulatedMotor(this.getMotorPort(this.getMotorType()));
+        }
+        return null;
     }
 
     /**
@@ -69,15 +63,18 @@ public class DriveMotor extends Motor {
     @Override
     public void init() {
         log.debug("init()");
-        log.debug(getMotorData().toString());
-    }
+        rotateTillStopped(Rotation.reverse);//up
+        resetTachoCount();
+        int up = getTachoCount();
+        log.debug("up: {}", getTachoCount());
+        rotateTillStopped(Rotation.ahead);//down
+        int down = getTachoCount();
+        log.debug("down: {}", down);
 
-    /**
-     * @link Motor#stop()
-     */
-    @Override
-    public void stop() {
-        super.stop();
-        getMotor().setSpeed(EV3devConstants.DRIVE_MOTOR_SPEED_NORMAL);
+        getMotorData().setPosition(RemoteEV3.Command.up, up);
+        getMotorData().setPosition(RemoteEV3.Command.down, down);
+
+        rotate(RemoteEV3.Command.up);
+        log.debug(getMotorData().toString());
     }
 }

@@ -1,23 +1,21 @@
 package de.munro.ev3.motor;
 
 import de.munro.ev3.data.MotorData;
+import de.munro.ev3.rmi.RemoteEV3;
 import ev3dev.actuators.lego.motors.BaseRegulatedMotor;
+import ev3dev.actuators.lego.motors.EV3LargeRegulatedMotor;
+import ev3dev.actuators.lego.motors.EV3MediumRegulatedMotor;
 import lejos.hardware.port.MotorPort;
 import lejos.hardware.port.Port;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.*;
+import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Slf4j
 public abstract class Motor {
-    
-    protected static final String DOWN_POSITION = "downPosition";
-    protected static final String UP_POSITION = "upPosition";
-    protected static final String LEFTMOST_POSITION = "leftmostPosition";
-    protected static final String RIGHTMOST_POSITION = "rightmostPosition";
-    protected static final String HOME_POSITION = "homePosition";
-    protected static final String IMPROVE_HOME_POSITION = "improveHomePosition";
 
     public enum Rotation {
         ahead,
@@ -30,49 +28,88 @@ public abstract class Motor {
         inversed
     }
 
-    public enum MotorType {
-        drive(MotorPort.A),
-        climbBack(MotorPort.B),
-        steering(MotorPort.C),
-        climbFront(MotorPort.D);
-
-        private final Port port;
-
-        MotorType(Port port) {
-            this.port = port;
-        }
-
-        public Port getPort() {
-            return port;
-        }
-    }
-
     private final Polarity polarity;
-    private final MotorType motorType;
+    private final RemoteEV3.MotorType motorType;
     private Rotation rotation = Rotation.stalled;
-    private final Properties properties = new Properties();
+    private RemoteEV3.Instruction lastInstruction = null;
+    private final MotorData motorData;
+    private final Map<RemoteEV3.MotorType, Port> motorPorts = new ConcurrentHashMap<RemoteEV3.MotorType, Port>();
 
     /**
      * Constructor
      * @param polarity the motor rotates in which direction
      * @param motorType describes what kind of motor this instance realizes
+     * @param motorData data
      */
-    public Motor(Polarity polarity, MotorType motorType) {
+    public Motor(Polarity polarity, RemoteEV3.MotorType motorType, MotorData motorData) {
         this.polarity = polarity;
         this.motorType = motorType;
+        this.motorData = motorData;
+
+        motorPorts.put(RemoteEV3.MotorType.drive, MotorPort.A);
+        motorPorts.put(RemoteEV3.MotorType.liftBack, MotorPort.B);
+        motorPorts.put(RemoteEV3.MotorType.steering, MotorPort.C);
+        motorPorts.put(RemoteEV3.MotorType.liftFront, MotorPort.D);
+
+        motorData.setMotorStatus(MotorData.MotorStatus.prepared);
     }
 
     /**
-     * react on changes in the current status
+     * Gets the motorData
+     * @return motorData
      */
-    public abstract void workOutMotorData();
+    public MotorData getMotorData() {
+        return motorData;
+    }
 
     /**
-     * @return properties config values
+     * react on action requests
      */
-    public Properties getProperties() {
-        return properties;
-    };
+    public void takeAction() {
+        if (lastInstruction != getMotorData().getInstruction()) {
+            log.debug("takeAction: {}", getMotorData().getInstruction());
+            lastInstruction = getMotorData().getInstruction();
+        }
+
+        Properties properties;
+        switch (getMotorData().getInstruction()) {
+            case perform:
+                rotate(getMotorData().getCommand());
+                break;
+            case read:
+                properties = readPropertyFile();
+                if (getMotorData().verify(properties)) {
+                    getMotorData().setPositions(properties);
+                    log.debug(getMotorData().toString());
+                }
+                break;
+            case write:
+                properties = getMotorData().getProperties();
+                if (getMotorData().verify(properties)) {
+                    log.debug(properties.toString());
+                    writePropertyFile(properties);
+                }
+                break;
+        }
+    }
+
+    /**
+     * Gets the motor port
+     * @param motorType motor type
+     * @return port
+     */
+    public Port getMotorPort(RemoteEV3.MotorType motorType) {
+        return motorPorts.get(motorType);
+    }
+
+    /**
+     * execute rotation of the motor
+     * @param cmd instruction for the motor
+     */
+    protected void rotate(RemoteEV3.Command cmd) {
+        log.debug("rotate: {}, {}", cmd, getMotorData().getPosition(cmd));
+        rotateTo(getMotorData().getPosition(cmd));
+    }
 
     /**
      * motor is ready to do his job
@@ -87,22 +124,25 @@ public abstract class Motor {
      * @link BaseRegulatedMotor#getSpeed()
      */
     public int getSpeed() {
-        return getMotor().getSpeed();
+        return getMotorData().getSpeed();
     }
 
     /**
      * @link BaseRegulatedMotor#setSpeed()
      */
     public void setSpeed(int speed) {
+        getMotorData().setSpeed(speed);
         getMotor().setSpeed(speed);
     }
 
     /**
+     * Get the motor
      * @return motor
      */
     abstract BaseRegulatedMotor getMotor();
 
     /**
+     * Set the polarity
      * @return polarity
      */
     public Polarity getPolarity() {
@@ -110,13 +150,15 @@ public abstract class Motor {
     }
 
     /**
+     * Set the motorType
      * @return motorType
      */
-    public MotorType getMotorType() {
+    public RemoteEV3.MotorType getMotorType() {
         return motorType;
     }
 
     /**
+     * Get the rotation
      * @return motorType
      */
     public Rotation getRotation() {
@@ -124,18 +166,12 @@ public abstract class Motor {
     }
 
     /**
+     * Sets the rotation
      * @param rotation direction the motor rotates
      */
     public void setRotation(Rotation rotation) {
         this.rotation = rotation;
     }
-
-    /**
-     * provides information about the status of the motor
-     *
-     * @return true, if the motor has to be stopped
-     */
-    abstract boolean is2BeStopped();
 
     /**
      * @link BaseRegulatedMotor#isStalled()
@@ -146,10 +182,26 @@ public abstract class Motor {
 
     /**
      * create a new motor instance
-     *
-     * @return EV3MediumRegulatedMotor
+     * @return BaseRegulatedMotor
      */
     abstract BaseRegulatedMotor createMotor();
+//    {
+//        log.debug("createMotor: {},{}", this.getMotorType(), this.getMotorPort(this.getMotorType()));
+//        try {
+//            switch (this.getMotorType()) {
+//                case steering:
+//                case liftFront:
+//                    return new EV3MediumRegulatedMotor(this.getMotorPort(this.getMotorType()));
+//                case drive:
+//                case liftBack:
+//                    return new EV3LargeRegulatedMotor(this.getMotorPort(this.getMotorType()));
+//            }
+//        } catch (RuntimeException e) {
+//            log.error("Create motor: ", e);
+//        }
+//
+//        return null;
+//    }
 
     /**
      * calls {@link BaseRegulatedMotor#backward()} or {@link BaseRegulatedMotor#forward()}
@@ -206,7 +258,7 @@ public abstract class Motor {
             case reverse:
                 backward();
         }
-        while (!is2BeStopped()) {
+        while (!isStalled()) {
         }
         setRotation(rotation);
         stop();
@@ -257,46 +309,42 @@ public abstract class Motor {
     public abstract void init();
 
     /**
-     * check whether all necessary properties could be read
-     */
-    public abstract boolean verifyProperties();
-
-    /**
      * build the properties filename
-     * @param clazz classname of the current instance
      * @return properties filename
      */
-    private String getPropertiesFilename(Class clazz) {
-        return "config/"+clazz.getSimpleName() + ".properties";
+    private String getPropertiesFilename() {
+        return "config/" + this.getMotorType() + ".properties";
     }
 
     /**
-     * read status information of the motor to the property file
+     * read motor properties from property file
+     * @return properties
      */
-    public boolean readPropertyFile() {
+    public Properties readPropertyFile() {
         log.debug("readPropertyFile()");
-        try (InputStream inputStream = new FileInputStream(getPropertiesFilename(this.getClass()))) {
+        Properties properties = new Properties();
+        String propertiesFilename = getPropertiesFilename();
+        log.debug("propertiesFilename: {}", propertiesFilename);
+        try (InputStream inputStream = new FileInputStream(propertiesFilename)) {
 
-            getProperties().load(inputStream);
-            log.debug("properties({})", getProperties());
+            properties.load(inputStream);
+            log.debug("properties({})", properties);
 
-        } catch (FileNotFoundException e) {
-            return false;
         } catch (IOException e) {
-            return false;
+            return null;
         }
-        return verifyProperties();
+        return properties;
     }
 
     /**
      * write status information of the motor to the property file
      */
-    public void writePropertyFile() {
-        File propertiesFile = new File(getPropertiesFilename(this.getClass()));
+    public void writePropertyFile(Properties properties) {
+        File propertiesFile = new File(getPropertiesFilename());
         propertiesFile.getParentFile().mkdirs();
         try (OutputStream outputStream = new FileOutputStream(propertiesFile)) {
 
-            getProperties().store(outputStream, null);
+            properties.store(outputStream, null);
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -313,13 +361,14 @@ public abstract class Motor {
     }
 
     /**
-     * concat all info interesting for logging
-     * @return message to be logged
+     * @link Object#toString
      */
-    public abstract void logStatus();
-
-    /**
-     * @return current motorData
-     */
-    public abstract MotorData getMotorData();
+    @Override
+    public String toString() {
+        return "{\n" +
+            "\tpolarity: " + polarity + "\n" +
+            "\tmotorType: " + motorType + "\n" +
+            "\tmotorData: " + motorData + "\n" +
+            "}\n";
+    }
 }
