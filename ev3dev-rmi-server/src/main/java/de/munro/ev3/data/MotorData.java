@@ -22,6 +22,7 @@ public class MotorData {
     private RemoteEV3.Command command;
     private RemoteEV3.Instruction instruction;
     private final Map<RemoteEV3.Command, Integer> positions;
+    private float position = 0.0F;
 
     /**
      * Constructor
@@ -169,6 +170,22 @@ public class MotorData {
             }
         }
         return true;
+    }
+
+    /**
+     * Gets the position
+     * @return position
+     */
+    public float getPosition() {
+        return position;
+    }
+
+    /**
+     * Sets the position
+     * @param position
+     */
+    public void setPosition(float position) {
+        this.position = position;
     }
 
     /**

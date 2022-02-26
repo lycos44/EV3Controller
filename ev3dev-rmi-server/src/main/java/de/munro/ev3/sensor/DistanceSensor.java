@@ -7,14 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class DistanceSensor extends Sensor {
 
-    private EV3UltrasonicSensor sensor;
-
-    /**
-     * Constructor
-     */
-    public DistanceSensor() {
-        sensor = new EV3UltrasonicSensor(SensorType.distance.getPort());
-    }
+    private final EV3UltrasonicSensor sensor = new EV3UltrasonicSensor(SensorType.distance.getPort());
 
     /**
      * @link Sensor#getSensor

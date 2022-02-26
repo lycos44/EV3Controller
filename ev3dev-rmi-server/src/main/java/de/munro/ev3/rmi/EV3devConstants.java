@@ -12,7 +12,7 @@ public class EV3devConstants {
     public static final int LIFT_BACK_MOTOR_SPEED = 600;
     public static final int LIFT_FRONT_MOTOR_SPEED_INITIAL = 200;
     public static final int LIFT_FRONT_MOTOR_SPEED = 1000;
-    public static final int STEERING_MOTOR_SPEED = 400;
+    public static final int STEERING_MOTOR_SPEED = 200;
     public static final int DRIVE_MOTOR_SPEED_NORMAL = 300;
 
 }

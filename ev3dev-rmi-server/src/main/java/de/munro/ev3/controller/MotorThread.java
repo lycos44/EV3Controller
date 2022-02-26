@@ -32,6 +32,7 @@ public class MotorThread extends Thread {
         do {
             synchronized (getMotor().getMotorData()) {
                 getMotor().getMotorData().wait();
+                log.debug("run {}", getMotor().getMotorData().getCommand());
                 if (getMotor().getMotorData().getMotorStatus() == MotorData.MotorStatus.running) {
                     getMotor().takeAction();
                 }

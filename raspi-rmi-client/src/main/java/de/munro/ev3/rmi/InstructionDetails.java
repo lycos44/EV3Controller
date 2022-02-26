@@ -16,7 +16,7 @@ public class InstructionDetails {
      * Constructor
      * @param arguments command line arguments
      */
-    public InstructionDetails(String[] arguments) {
+    public void readArguments(String[] arguments) {
         try {
             // instruction
             if (arguments != null && arguments.length > INSTRUCTION_ID) {
@@ -24,7 +24,7 @@ public class InstructionDetails {
             }
             // motor
             if (arguments != null && arguments.length > MOTOR_ID) {
-                this.motorType = RemoteEV3.MotorType.valueOf(arguments[MOTOR_ID]);
+                this.motorType = RemoteEV3.MotorType.getEnum(arguments[MOTOR_ID]);
             }
             // command
             if (arguments != null && arguments.length > COMMAND_ID) {
@@ -77,19 +77,11 @@ public class InstructionDetails {
      */
     @Override
     public String toString() {
-        StringBuilder stringBuilder = new StringBuilder();
-        stringBuilder
-                .append("{").append("\n");
-        stringBuilder
-                .append("\t").append("instruction:  ").append(getInstruction()).append("\n");
-        if (getMotorType() != null) stringBuilder
-                .append("\t").append("motor:        ").append(getMotorType()).append("\n");
-        if (getCommand() != null) stringBuilder
-                .append("\t").append("command:      ").append(getCommand()).append("\n");
-        if (getValue() != null) stringBuilder
-                .append("\t").append("value:        ").append(getValue()).append("\n");
-        stringBuilder
-                .append("}").append("\n");
-        return stringBuilder.toString();
+        return "{" + "\n" +
+                "\tinstruction: " + getInstruction() + "\n" +
+                "\tmotor:       " + getMotorType() + "\n" +
+                "\tcommand:     " + getCommand() + "\n" +
+                "\tvalue:       " + getValue() + "\n" +
+                "}";
     }
 }

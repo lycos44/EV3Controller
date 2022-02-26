@@ -69,4 +69,12 @@ public class RemoteEV3Dummy implements RemoteEV3 {
     public void show(MotorType motor) throws RemoteException {
 
     }
+
+    /**
+     * @link RemoveEV3#status
+     */
+    @Override
+    public SensorsDataOLD status() throws RemoteException {
+        return new SensorsDataOLD();
+    }
 }

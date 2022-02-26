@@ -1,10 +1,9 @@
 package de.munro.ev3.rmi;
 
 import de.munro.ev3.controller.MotorThread;
-import de.munro.ev3.controller.SensorThread;
+import de.munro.ev3.controller.SensorsThread;
 import de.munro.ev3.data.EV3devData;
 import de.munro.ev3.data.MotorData;
-import de.munro.ev3.data.SensorData;
 import de.munro.ev3.motor.*;
 import ev3dev.actuators.Sound;
 import lejos.utility.Delay;
@@ -48,6 +47,9 @@ public class EV3devRMIServer extends UnicastRemoteObject implements RemoteEV3 {
         motorThreads = Collections.synchronizedList(new ArrayList<>());
     }
 
+    /**
+     * @link Object#main
+     */
     public static void main(String[] args) throws InvalidNameException {
         log.info("Started {}", (Object) args);
 
@@ -88,20 +90,18 @@ public class EV3devRMIServer extends UnicastRemoteObject implements RemoteEV3 {
      * create all threads
      */
     private void createThreads() {
-        // start sensor thread
-        this.setSensorThread(this.startSensorThread(this.getEv3devData().getSensorData()));
-        log.info("Sensor instances created.");
-
         // instantiate motors
         Motor driveMotor = new DriveMotor(this.getEv3devData().getMotorData(MotorType.drive));
         Motor liftBackMotor = new LiftMotor(
                 Motor.Polarity.inversed,
                 RemoteEV3.MotorType.liftBack,
-                this.getEv3devData().getMotorData(MotorType.liftBack));
+                this.getEv3devData().getMotorData(MotorType.liftBack),
+                75);
         Motor liftFrontMotor = new LiftMotor(
                 Motor.Polarity.inversed,
                 RemoteEV3.MotorType.liftFront,
-                this.getEv3devData().getMotorData(MotorType.liftFront));
+                this.getEv3devData().getMotorData(MotorType.liftFront),
+                0);
         Motor steeringMotor = new SteeringMotor(this.getEv3devData().getMotorData(MotorType.steering));
         log.info("Motor instances created.");
 
@@ -110,6 +110,11 @@ public class EV3devRMIServer extends UnicastRemoteObject implements RemoteEV3 {
         this.getMotorThreads().add(this.startMotorThread(liftFrontMotor));
         this.getMotorThreads().add(this.startMotorThread(driveMotor));
         this.getMotorThreads().add(this.startMotorThread(steeringMotor));
+
+        // start sensor thread
+        this.setSensorThread(this.startSensorThread(this.getEv3devData()));
+        log.info("Sensor thread started.");
+
         log.info("Threads running.");
     }
 
@@ -120,6 +125,9 @@ public class EV3devRMIServer extends UnicastRemoteObject implements RemoteEV3 {
         log.debug("halt()");
 
         // notify threads to stop
+        this.getEv3devData().getSensorsData().setRunning(false);
+        this.getEv3devData().getSensorsData().notify();
+
         for (MotorType motorType : MotorType.values()) {
             synchronized (this.getEv3devData().getMotorData(motorType)) {
                 this.getEv3devData().getMotorData(motorType).setMotorStatus(MotorData.MotorStatus.toBeStopped);
@@ -130,7 +138,7 @@ public class EV3devRMIServer extends UnicastRemoteObject implements RemoteEV3 {
         // wait for all threads stopped
         boolean allThreadsStopped;
         do {
-            allThreadsStopped = true;
+            allThreadsStopped = this.getEv3devData().getSensorsData().isRunning();
             for (MotorType motorType : MotorType.values()) {
                 allThreadsStopped &= this.getEv3devData().getMotorData(motorType).getMotorStatus() == MotorData.MotorStatus.stopped;
             }
@@ -149,11 +157,11 @@ public class EV3devRMIServer extends UnicastRemoteObject implements RemoteEV3 {
 
     /**
      * start the thread responsible to watch all sensor devices
-     * @param sensorData sensorData to set
      * @return current sensorThread
+     * @param ev3devData
      */
-    private Thread startSensorThread(SensorData sensorData) {
-        Thread thread = new SensorThread(sensorData);
+    private Thread startSensorThread(EV3devData ev3devData) {
+        Thread thread = new SensorsThread(ev3devData);
         thread.start();
         return thread;
     }
@@ -202,37 +210,28 @@ public class EV3devRMIServer extends UnicastRemoteObject implements RemoteEV3 {
     public void perform(MotorType motorType, Command command) throws RemoteException {
         log.debug("perform({}, {})", motorType, command);
 
-        synchronized (this.getEv3devData().getMotorData(motorType)) {
-            this.getEv3devData().getMotorData(motorType).setInstruction(Instruction.perform);
-            this.getEv3devData().getMotorData(motorType).setCommand(command);
-            this.getEv3devData().getMotorData(motorType).notify();
-        }
+        this.getEv3devData().perform(motorType, command);
     }
 
     @Override
     public void set(MotorType motorType, Command command, Integer value) throws RemoteException {
         log.debug("set({}, {}, {})", motorType, command, value);
-        synchronized (this.getEv3devData().getMotorData(motorType)) {
-            this.getEv3devData().getMotorData(motorType).setPosition(command, value);
-        }
+
+        this.getEv3devData().set(motorType, command, value);
     }
 
     @Override
     public void read(MotorType motorType) throws RemoteException {
         log.debug("read({})", motorType);
-        synchronized (this.getEv3devData().getMotorData(motorType)) {
-            this.getEv3devData().getMotorData(motorType).setInstruction(Instruction.read);
-            this.getEv3devData().getMotorData(motorType).notify();
-        }
+
+        this.getEv3devData().read(motorType);
     }
 
     @Override
     public void write(MotorType motorType) throws RemoteException {
         log.debug("write({})", motorType);
-        synchronized (this.getEv3devData().getMotorData(motorType)) {
-            this.getEv3devData().getMotorData(motorType).setInstruction(Instruction.write);
-            this.getEv3devData().getMotorData(motorType).notify();
-        }
+
+        this.getEv3devData().write(motorType);
     }
 
     @Override
@@ -253,6 +252,21 @@ public class EV3devRMIServer extends UnicastRemoteObject implements RemoteEV3 {
      */
     public void setSensorThread(Thread sensorThread) {
         this.sensorThread = sensorThread;
+    }
+
+    @Override
+    public SensorsDataOLD status() throws RemoteException {
+        return new SensorsDataOLD(
+                true,
+    true,//                getEv3devData().isBackwardPressed(),
+                0,//getEv3devData().getGyroAngleRate(),
+                0, //getEv3devData().getColorID(),
+                0,//getEv3devData().getDistance(),
+                getEv3devData().getMotorData(MotorType.liftBack).getCommand(),
+                getEv3devData().getMotorData(MotorType.liftFront).getCommand(),
+                getEv3devData().getMotorData(MotorType.drive).getCommand(),
+                getEv3devData().getMotorData(MotorType.steering).getCommand()
+        );
     }
 
     /**

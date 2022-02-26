@@ -66,6 +66,7 @@ public abstract class Motor {
      * react on action requests
      */
     public void takeAction() {
+        log.debug("start takeAction: {}", getMotorData().getInstruction());
         if (lastInstruction != getMotorData().getInstruction()) {
             log.debug("takeAction: {}", getMotorData().getInstruction());
             lastInstruction = getMotorData().getInstruction();
@@ -112,7 +113,7 @@ public abstract class Motor {
     }
 
     /**
-     * motor is ready to do his job
+     * the current motor is ready to do his job
      * @return true, if the member motor is not null
      */
     public boolean isInitialized() {
@@ -142,7 +143,7 @@ public abstract class Motor {
     abstract BaseRegulatedMotor getMotor();
 
     /**
-     * Set the polarity
+     * Get the polarity
      * @return polarity
      */
     public Polarity getPolarity() {
@@ -150,7 +151,7 @@ public abstract class Motor {
     }
 
     /**
-     * Set the motorType
+     * Get the motorType
      * @return motorType
      */
     public RemoteEV3.MotorType getMotorType() {
@@ -159,7 +160,7 @@ public abstract class Motor {
 
     /**
      * Get the rotation
-     * @return motorType
+     * @return rotation
      */
     public Rotation getRotation() {
         return rotation;
@@ -173,6 +174,10 @@ public abstract class Motor {
         this.rotation = rotation;
     }
 
+    public float getPosition() {
+        return getMotor().getPosition();
+    }
+
     /**
      * @link BaseRegulatedMotor#isStalled()
      */
@@ -184,24 +189,23 @@ public abstract class Motor {
      * create a new motor instance
      * @return BaseRegulatedMotor
      */
-    abstract BaseRegulatedMotor createMotor();
-//    {
-//        log.debug("createMotor: {},{}", this.getMotorType(), this.getMotorPort(this.getMotorType()));
-//        try {
-//            switch (this.getMotorType()) {
-//                case steering:
-//                case liftFront:
-//                    return new EV3MediumRegulatedMotor(this.getMotorPort(this.getMotorType()));
-//                case drive:
-//                case liftBack:
-//                    return new EV3LargeRegulatedMotor(this.getMotorPort(this.getMotorType()));
-//            }
-//        } catch (RuntimeException e) {
-//            log.error("Create motor: ", e);
-//        }
-//
-//        return null;
-//    }
+    BaseRegulatedMotor createMotor() {
+        log.debug("createMotor: {},{}", this.getMotorType(), this.getMotorPort(this.getMotorType()));
+        try {
+            switch (this.getMotorType()) {
+                case steering:
+                case liftFront:
+                    return new EV3MediumRegulatedMotor(this.getMotorPort(this.getMotorType()));
+                case drive:
+                case liftBack:
+                    return new EV3LargeRegulatedMotor(this.getMotorPort(this.getMotorType()));
+            }
+        } catch (RuntimeException e) {
+            log.error("Create motor: ", e);
+        }
+
+        return null;
+    }
 
     /**
      * calls {@link BaseRegulatedMotor#backward()} or {@link BaseRegulatedMotor#forward()}

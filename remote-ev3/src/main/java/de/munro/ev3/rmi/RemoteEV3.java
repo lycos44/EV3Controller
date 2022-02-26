@@ -12,18 +12,49 @@ public interface RemoteEV3 extends Remote
         liftBack,
         liftFront,
         drive,
-        steering
+        steering;
+
+        public static MotorType getEnum(String value) {
+            for(MotorType v : values()) {
+                if (v.toString().equalsIgnoreCase(value)) return v;
+            }
+            throw new IllegalArgumentException();
+        }
     }
 
     enum Command {
-        forward,
-        backward,
-        stop,
-        left,
-        right,
-        home,
-        up,
-        down
+        forward(new MotorType[]{MotorType.drive}),
+        backward(new MotorType[]{MotorType.drive}),
+        stop(new MotorType[]{MotorType.drive}),
+        left(new MotorType[]{MotorType.steering}),
+        right(new MotorType[]{MotorType.steering}),
+        home(new MotorType[]{MotorType.steering}),
+        up(new MotorType[]{MotorType.liftBack, MotorType.liftFront}),
+        down(new MotorType[]{MotorType.liftBack, MotorType.liftFront});
+
+        private MotorType[] motorTypes;
+
+        Command(MotorType[] motorTypes) {
+            this.motorTypes = motorTypes;
+        }
+
+        public MotorType[] getMotorTypes() {
+            return motorTypes;
+        }
+
+        public boolean containsMotorType(MotorType motorType) {
+            for (MotorType mt : getMotorTypes()) {
+                if (mt == motorType) return true;
+            }
+            return false;
+        }
+
+        public static Command getEnum(String value, MotorType motorType) {
+            for(Command v : values()) {
+                if (v.toString().equalsIgnoreCase(value) && v.containsMotorType(motorType)) return v;
+            }
+            throw new IllegalArgumentException();
+        }
     }
 
     enum Instruction {
@@ -33,6 +64,7 @@ public interface RemoteEV3 extends Remote
         read,
         write,
         show,
+        status,
         quit,
         shutdown
     }
@@ -48,4 +80,5 @@ public interface RemoteEV3 extends Remote
     void read(MotorType motor) throws RemoteException, InvalidNameException;
     void write(MotorType motor) throws RemoteException, InvalidNameException;
     void show(MotorType motor) throws RemoteException, InvalidNameException;
+    SensorsDataOLD status() throws RemoteException, InvalidNameException;
 }

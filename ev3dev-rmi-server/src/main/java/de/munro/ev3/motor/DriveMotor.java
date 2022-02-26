@@ -4,7 +4,6 @@ import de.munro.ev3.data.MotorData;
 import de.munro.ev3.rmi.EV3devConstants;
 import de.munro.ev3.rmi.RemoteEV3;
 import ev3dev.actuators.lego.motors.BaseRegulatedMotor;
-import ev3dev.actuators.lego.motors.EV3LargeRegulatedMotor;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.naming.InvalidNameException;
@@ -24,7 +23,7 @@ public class DriveMotor extends Motor {
         int attempts = 0;
         do {
             this.motor = createMotor();
-        } while (null == this.motor && attempts++<2);
+        } while (null == this.motor && attempts++<3);
         if (null == this.motor) {
             log.error("Initialisation of {} failed", this.getClass().getSimpleName());
             System.exit(EV3devConstants.SYSTEM_UNEXPECTED_ERROR);
@@ -56,20 +55,13 @@ public class DriveMotor extends Motor {
     }
 
     /**
-     * @link Motor#createMotor()
-     */
-    @Override
-    BaseRegulatedMotor createMotor() {
-        return new EV3LargeRegulatedMotor(this.getMotorPort(this.getMotorType()));
-    }
-
-    /**
      * @link Motor#init()
      */
     @Override
     public void init() {
         log.debug("init()");
         log.debug(getMotorData().toString());
+        getMotorData().setCommand(RemoteEV3.Command.stop);
     }
 
     /**

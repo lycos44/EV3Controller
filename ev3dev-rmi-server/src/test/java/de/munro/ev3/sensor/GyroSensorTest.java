@@ -20,8 +20,9 @@ public class GyroSensorTest {
         SampleProvider sampleProvider = Mockito.mock(SampleProvider.class);
         when(sampleProvider.sampleSize()).thenReturn(1);
         when(ev3GyroSensor.getRateMode()).thenReturn(sampleProvider);
+        when(gyroSensor.getSample()).thenReturn(new float[10]);
         when(gyroSensor.getSensor()).thenReturn(ev3GyroSensor);
 
-        MatcherAssert.assertThat(gyroSensor.getGyroAngleRate(), is(0));
+        MatcherAssert.assertThat(gyroSensor.getGyroAngleRate(), is(0.0F));
     }
 }

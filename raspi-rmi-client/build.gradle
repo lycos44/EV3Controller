@@ -10,6 +10,12 @@ application {
 
 dependencies {
     implementation project(':remote-ev3')
+    implementation 'com.github.ev3dev-lang-java:ev3dev-lang-java:2.5.3'
+    implementation 'com.github.ev3dev-lang-java:lejos-navigation:0.2.0'
+}
+
+test {
+    useJUnitPlatform()
 }
 
 project.ext.classPathArtifacts = ["${project.name}-${version}.jar", "remoteEV3-${version}.jar"]

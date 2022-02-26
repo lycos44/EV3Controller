@@ -4,7 +4,6 @@ import de.munro.ev3.data.MotorData;
 import de.munro.ev3.rmi.EV3devConstants;
 import de.munro.ev3.rmi.RemoteEV3;
 import ev3dev.actuators.lego.motors.BaseRegulatedMotor;
-import ev3dev.actuators.lego.motors.EV3MediumRegulatedMotor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -21,7 +20,7 @@ public class SteeringMotor extends Motor {
         int attempts = 0;
         do {
             this.motor = createMotor();
-        } while (null == this.motor && attempts++<2);
+        } while (null == this.motor && attempts++<3);
         if (null == this.motor) {
             log.error("Initialisation of {} failed", this.getClass().getSimpleName());
             System.exit(EV3devConstants.SYSTEM_UNEXPECTED_ERROR);
@@ -36,14 +35,6 @@ public class SteeringMotor extends Motor {
     @Override
     BaseRegulatedMotor getMotor() {
         return motor;
-    }
-
-    /**
-     * @link Motor#createMotor()
-     */
-    @Override
-    BaseRegulatedMotor createMotor() {
-        return new EV3MediumRegulatedMotor(this.getMotorPort(this.getMotorType()));
     }
 
     /**
@@ -67,6 +58,7 @@ public class SteeringMotor extends Motor {
         getMotorData().setPosition(RemoteEV3.Command.home, home);
 
         rotate(RemoteEV3.Command.home);
+        getMotorData().setCommand(RemoteEV3.Command.home);
         log.debug(getMotorData().toString());
     }
 }

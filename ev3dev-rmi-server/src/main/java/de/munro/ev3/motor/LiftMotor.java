@@ -15,6 +15,7 @@ import java.util.Properties;
 public class LiftMotor extends Motor {
 
     private BaseRegulatedMotor motor;
+    private int adjustUp;
 
     /**
      * Constructor
@@ -22,13 +23,14 @@ public class LiftMotor extends Motor {
      * @param motorType type of the motor
      * @param motorData model
      */
-    public LiftMotor(Polarity polarity, RemoteEV3.MotorType motorType, MotorData motorData) {
+    public LiftMotor(Polarity polarity, RemoteEV3.MotorType motorType, MotorData motorData, int adjustUp) {
         super(polarity, motorType, motorData);
+        this.adjustUp = adjustUp;
         int attempts = 0;
         do {
             log.info("Create motor: {}", attempts);
             this.motor = createMotor();
-        } while (null == this.motor && attempts++<2);
+        } while (null == this.motor && attempts++<3);
         if (null == this.motor) {
             log.error("Initialisation of {} failed", this.getClass().getSimpleName());
             System.exit(EV3devConstants.SYSTEM_UNEXPECTED_ERROR);
@@ -45,19 +47,6 @@ public class LiftMotor extends Motor {
     }
 
     /**
-     * @link Motor#createMotor()
-     */
-    @Override
-    BaseRegulatedMotor createMotor() {
-        if (getMotorType() == RemoteEV3.MotorType.liftFront) {
-            return new EV3MediumRegulatedMotor(this.getMotorPort(this.getMotorType()));
-        } else if (getMotorType() == RemoteEV3.MotorType.liftBack) {
-            return new EV3LargeRegulatedMotor(this.getMotorPort(this.getMotorType()));
-        }
-        return null;
-    }
-
-    /**
      * @link Motor#init()
      */
     @Override
@@ -71,10 +60,11 @@ public class LiftMotor extends Motor {
         int down = getTachoCount();
         log.debug("down: {}", down);
 
-        getMotorData().setPosition(RemoteEV3.Command.up, up);
+        getMotorData().setPosition(RemoteEV3.Command.up, up+adjustUp);
         getMotorData().setPosition(RemoteEV3.Command.down, down);
 
         rotate(RemoteEV3.Command.up);
+        getMotorData().setCommand(RemoteEV3.Command.up);
         log.debug(getMotorData().toString());
     }
 }

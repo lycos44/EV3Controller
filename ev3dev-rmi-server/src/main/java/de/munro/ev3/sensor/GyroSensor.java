@@ -7,7 +7,10 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class GyroSensor extends Sensor {
 
+    private static final int SAMPLE_SIZE = 10;
     private final EV3GyroSensor sensor;
+    private int offset;
+    private float[] sample = new float[SAMPLE_SIZE];
 
     /**
      * Constructor
@@ -25,15 +28,38 @@ public class GyroSensor extends Sensor {
         return sensor;
     }
 
+    public float[] getSample() {
+        return sample;
+    }
+
     /**
      * provides the rate currently measured
      * @return distance
      */
-    public int getGyroAngleRate() {
+    public float getGyroAngleRate() {
+        offset = ++offset % getSample().length;
+
         final SampleProvider sampleProvider = getSensor().getRateMode();
-        float [] sample = new float[sampleProvider.sampleSize()];
-        sampleProvider.fetchSample(sample, 0);
-        return  (int)sample[0];
+        sampleProvider.fetchSample(getSample(), offset);
+        return getSample()[offset];
+    }
+
+    public boolean isReadyToExamine() {
+        return offset == SAMPLE_SIZE;
+    }
+
+    public float getAverageSample() {
+        float sum = 0.0F;
+        for (int i=0; i<SAMPLE_SIZE; i++) {
+            sum += sample[i];
+        }
+        return sum/sample.length;
+    }
+
+    public void reset() {
+        for (int i=0; i<SAMPLE_SIZE; i++) {
+            sample[i] = 0.0F;
+        }
     }
 
     /**
@@ -41,6 +67,6 @@ public class GyroSensor extends Sensor {
      */
     @Override
     public String toString() {
-        return Integer.toString(getGyroAngleRate());
+        return Float.toString(getGyroAngleRate());
     }
 }
